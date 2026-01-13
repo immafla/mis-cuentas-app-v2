@@ -12,8 +12,9 @@ import {
     Box,
     InputAdornment
 } from '@mui/material'
-import { Product } from '../../../pages/product/interface';
+// import { Product } from '../../../pages/product/interface';
 import { ApiService } from '../../../../services/api.service'
+import { Product } from '@/interfaces';
 
 export const NewProductModal: FC<{
     columns: MRT_ColumnDef<Product>[];
@@ -74,7 +75,7 @@ export const NewProductModal: FC<{
 
     const getBussinesCategoryList = async () => {
         try{
-            const bussinesCategoryResponse = await apiService.getAllBussinesCategory();
+            const bussinesCategoryResponse = await (await apiService.getAllBussinesCategory()).json();
             if(bussinesCategoryResponse){
                 setBussinesCategoryList(bussinesCategoryResponse.map((el:any) => ({
                     value: el._id,

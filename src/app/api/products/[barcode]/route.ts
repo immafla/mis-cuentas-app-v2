@@ -1,11 +1,17 @@
-import { NextResponse } from 'next/server';
-import dbConnect from '../../../../lib/mongodb';
-import Product from '../../../../lib/models/Product';
+import { NextRequest, NextResponse } from 'next/server';
+import dbConnect from '@/lib/mongodb';
+import Product from '@/lib/models/Product';
 
-export async function GET(request: Request, { params }: { params: { barcode: string } }) {
+// 1. Definimos la interfaz para los parámetros (debe ser una Promesa)
+type Props = {
+  params: Promise<{ barcode: string }>
+}
+
+export async function GET(request: NextRequest, context: Props) {
   try {
     await dbConnect();
-    const product = await Product.findOne({ barcode: params.barcode, type: 'product' });
+    const { barcode } = await context.params;
+    const product = await Product.findOne({ barcode });
     if (product) {
       return NextResponse.json(product);
     } else {

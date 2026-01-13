@@ -37,12 +37,9 @@ import { IActionsModal } from "./interface";
 import { ApiService } from "../../../services/api.service";
 import Dialog from "@mui/material/Dialog";
 import CloseIcon from "@mui/icons-material/Close";
-import { Product } from "../../../interfaces/index";
+import { Product } from "@/interfaces/";
 
-interface Product {
-  name: string;
-  price: number;
-}
+
 export const NewSale = ({ open, setOpen }: IActionsModal) => {
   const [barCodeProduct, setBarCodeProduct] = useState<string>();
   const [openAutocomplete, setOpenAutocomplete] = React.useState(false);
@@ -169,7 +166,7 @@ export const NewSale = ({ open, setOpen }: IActionsModal) => {
           columnSpacing={{ xs: 15, sm: 2, md: 3 }}
         >
           {/* NEGOCIO */}
-          <Grid item xs={12}>
+          <Grid>
             <Box
               component="form"
               sx={{
@@ -186,7 +183,7 @@ export const NewSale = ({ open, setOpen }: IActionsModal) => {
               <List>
                 {listSelectedProducts.map((element, index) => (
                   <Grid container key={`${index}${element?.barCode}`} spacing={2}>
-                    <Grid item xs={10}>
+                    <Grid>
                       <ListItem>
                         <ListItemAvatar>
                           <Avatar>
@@ -199,7 +196,7 @@ export const NewSale = ({ open, setOpen }: IActionsModal) => {
                         />
                       </ListItem>
                     </Grid>
-                    <Grid item xs={2}>
+                    <Grid>
                       <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component='div'>
                         {`$ ${element?.price}`}
                       </Typography>

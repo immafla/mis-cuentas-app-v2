@@ -1,4 +1,4 @@
-import React, { useEffect, useState, FC } from 'react';
+import React, { useEffect, useState, FC, JSX } from 'react';
 import {
     Button,
     DialogActions,
@@ -10,7 +10,7 @@ import {
 import Dialog, { DialogProps } from '@mui/material/Dialog';
 
 export const Modal: FC<{
-    children: JSX.Element;
+    children: JSX.Element | JSX.Element[];
 	onClose: () => void;
 	onSubmit: () => void;
 	open: boolean;

@@ -17,9 +17,6 @@ import MaterialReactTable, {
 } from 'material-react-table';
 
 import { Delete, Edit, AddCircle } from '@mui/icons-material';
-
-import { data, categories, brands } from '../product/makeData';
-
 import { NewBrandModal } from '../../molecules'
 
 import { MRT_Localization_ES } from 'material-react-table/locales/es';
@@ -28,7 +25,7 @@ import Dialog, { DialogProps } from '@mui/material/Dialog';
 import { IActionsModal } from './interface';
 import { ApiService } from '../../../services/api.service';
 
-export const NewBrand = ({open,setOpen}:IActionsModal):JSX.Element => {
+export const NewBrand = ({open,setOpen}:IActionsModal) => {
     const api = new ApiService()
     const [name, setName] = useState('');
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -46,7 +43,7 @@ export const NewBrand = ({open,setOpen}:IActionsModal):JSX.Element => {
         }
     };
 
-    const validateBrandIsUsed = async (idBrand) => {
+    const validateBrandIsUsed = async (idBrand: any) => {
 
     }
 

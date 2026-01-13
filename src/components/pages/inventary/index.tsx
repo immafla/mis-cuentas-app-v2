@@ -30,7 +30,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { Product } from "../../../interfaces";
 import { ApiService } from "../../../services/api.service";
 
-export const NewInventary = ({ open, setOpen }: IActionsModal): JSX.Element => {
+export const NewInventary = ({ open, setOpen }: IActionsModal) => {
   const apiService = new ApiService();
   const [age, setAge] = useState("");
   const [openAutocomplete, setOpenAutocomplete] = useState(false);
@@ -137,7 +137,7 @@ export const NewInventary = ({ open, setOpen }: IActionsModal): JSX.Element => {
           columnSpacing={{ xs: 15, sm: 2, md: 3 }}
         >
           {/* NEGOCIO */}
-          <Grid item xs={6}>
+          <Grid>
             <FormControl fullWidth>
               <InputLabel id="demo-simple-select-label">Negocio</InputLabel>
               <Select
@@ -154,7 +154,7 @@ export const NewInventary = ({ open, setOpen }: IActionsModal): JSX.Element => {
           </Grid>
 
           {/* PRODUCTO */}
-          <Grid item xs={6}>
+          <Grid>
             <FormControl fullWidth>
               <Autocomplete
                 id="asynchronous-demo"
@@ -194,7 +194,7 @@ export const NewInventary = ({ open, setOpen }: IActionsModal): JSX.Element => {
           </Grid>
 
           {/* CANTIDAD */}
-          <Grid item xs={6}>
+          <Grid>
             <FormControl fullWidth>
               <TextField
                 id="outlined-number"
@@ -208,7 +208,7 @@ export const NewInventary = ({ open, setOpen }: IActionsModal): JSX.Element => {
           </Grid>
 
           {/* VALOR UNITARIO */}
-          <Grid item xs={6}>
+          <Grid>
             <FormControl fullWidth>
               <TextField
                 id="outlined-number"
