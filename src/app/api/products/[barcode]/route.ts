@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, context: Props) {
     
     await dbConnect();
     const { barcode } = await context.params;
-    const product = await Product.findOne({ barcode });
+    const product = await Product.findOne({ bar_code: barcode });
     if (product) {
       return NextResponse.json(product);
     } else {
