@@ -298,7 +298,7 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
       //fullWidth={fullWidth}
       //maxWidth={maxWidth}
       fullWidth={true}
-      maxWidth={'md'}
+      maxWidth={'lg'}
     >
       <AppBar sx={{ position: 'relative' }}>
         <Toolbar>
