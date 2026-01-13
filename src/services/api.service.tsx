@@ -61,7 +61,7 @@ export class ApiService {
             headers: {
                 'Content-Type': 'application/json'
             },
-            redirect: 'follow', // manual, *follow, error
+            redirect: 'follow',
             body: JSON.stringify(body)
         }) 
     }

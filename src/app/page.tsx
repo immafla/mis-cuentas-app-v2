@@ -16,6 +16,13 @@ export default function Home() {
 
   return (
     <>
+      {openNewSaleModal && (
+        <NewSale
+          open={openNewSaleModal}
+          setOpen={() => setOpenNewSaleModal((prev) => !prev)}
+        />
+      )}
+
       {openNewProductModal && (
         <NewProduct
           open={openNewProductModal}
@@ -23,14 +30,7 @@ export default function Home() {
         />
       )}
 
-      {openNewSaleModal && (
-        <NewSale
-          open={openNewSaleModal}
-          setOpen={() => setOpenNewSaleModal((prev) => !prev)}
-        />
-      )}  
-
-      {openNewBrandModal &&  (
+      {openNewBrandModal && (
         <NewBrand
           open={openNewBrandModal}
           setOpen={() => setOpenNewBrandModal((prev) => !prev)}

@@ -39,7 +39,6 @@ import Dialog from "@mui/material/Dialog";
 import CloseIcon from "@mui/icons-material/Close";
 import { Product } from "@/interfaces/";
 
-
 export const NewSale = ({ open, setOpen }: IActionsModal) => {
   const [barCodeProduct, setBarCodeProduct] = useState<string>();
   const [openAutocomplete, setOpenAutocomplete] = React.useState(false);
@@ -60,6 +59,19 @@ export const NewSale = ({ open, setOpen }: IActionsModal) => {
 
   const bufferRef = useRef("");
   const lastKeyTimeRef = useRef(Date.now());
+
+  const setProductScaned = async (barCode: string) => {
+    const apiService = new ApiService();
+    const data = await (await apiService.getProductByBarcode(barCode)).json();
+    setListSelectedProducts((prevState) => [
+      ...prevState,
+      {
+        barCode: barCode,
+        name: data.name,
+        price: data.sale_price,
+      },
+    ]);
+  };
 
   useEffect(() => {
     const handleKeyDown = (event: any) => {
@@ -99,19 +111,7 @@ export const NewSale = ({ open, setOpen }: IActionsModal) => {
 
   useEffect(() => {
     if (barCodeProduct) {
-      const apiService = new ApiService();
-      apiService.getProductByBarcode(barCodeProduct).then((response) => {
-        response.json().then((data) => {
-          setListSelectedProducts((prevState) => [
-            ...prevState,
-            {
-              barCode: barCodeProduct,
-              name: data[0]?.name,
-              price: data[0]?.sale_price,
-            },
-          ]);
-        });
-      });
+      setProductScaned(barCodeProduct);
     }
   }, [barCodeProduct]);
 
@@ -166,7 +166,7 @@ export const NewSale = ({ open, setOpen }: IActionsModal) => {
           columnSpacing={{ xs: 15, sm: 2, md: 3 }}
         >
           {/* NEGOCIO */}
-          <Grid>
+          <Grid size={12}>
             <Box
               component="form"
               sx={{
@@ -177,13 +177,21 @@ export const NewSale = ({ open, setOpen }: IActionsModal) => {
                 border: "1px dashed grey",
               }}
             >
-              <Typography sx={{ mt: 3, ml: 2, flex: 1, textAlign: "center" }} variant="h5" component="div">
+              <Typography
+                sx={{ mt: 3, ml: 2, flex: 1, textAlign: "center" }}
+                variant="h5"
+                component="div"
+              >
                 Listado de productos
               </Typography>
               <List>
                 {listSelectedProducts.map((element, index) => (
-                  <Grid container key={`${index}${element?.barCode}`} spacing={2}>
-                    <Grid>
+                  <Grid
+                    container
+                    key={`${index}${element?.barCode}`}
+                    spacing={2}
+                  >
+                    <Grid size={10}>
                       <ListItem>
                         <ListItemAvatar>
                           <Avatar>
@@ -196,8 +204,12 @@ export const NewSale = ({ open, setOpen }: IActionsModal) => {
                         />
                       </ListItem>
                     </Grid>
-                    <Grid>
-                      <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component='div'>
+                    <Grid size={2}>
+                      <Typography
+                        sx={{ ml: 2, flex: 1 }}
+                        variant="h4"
+                        component="div"
+                      >
                         {`$ ${element?.price}`}
                       </Typography>
                     </Grid>

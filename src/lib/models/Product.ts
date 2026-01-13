@@ -16,6 +16,8 @@ const ProductSchema = new Schema<IProduct>({
   category: { type: String, required: true },
   sale_price: { type: String, required: true },
   bar_code: { type: String, required: true },
+}, { 
+  timestamps: true // Esto crea automáticamente createdAt y updatedAt
 });
 
 export default mongoose.models.Product || mongoose.model<IProduct>("Product", ProductSchema);
