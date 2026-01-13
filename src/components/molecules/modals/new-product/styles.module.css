@@ -1,0 +1,7 @@
+.container {
+    display: grid;
+    /* grid-template-areas:
+        'name name'
+        'purchase_price sale_price'; */
+    gap: 20px;
+}
