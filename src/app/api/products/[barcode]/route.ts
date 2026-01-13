@@ -9,6 +9,7 @@ type Props = {
 
 export async function GET(request: NextRequest, context: Props) {
   try {
+    
     await dbConnect();
     const { barcode } = await context.params;
     const product = await Product.findOne({ barcode });
