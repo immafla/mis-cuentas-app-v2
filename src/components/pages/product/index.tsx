@@ -12,7 +12,7 @@ import {
     Tooltip,
     IconButton,
     MenuItem,
-		AppBar,
+    AppBar,
     Toolbar,
     FormControl,
     InputLabel,
@@ -20,7 +20,8 @@ import {
 } from '@mui/material'
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CloseIcon from '@mui/icons-material/Close';
-import MaterialReactTable, {
+import {
+    MaterialReactTable,
     MaterialReactTableProps,
     MRT_Cell,
     MRT_ColumnDef,
@@ -28,19 +29,28 @@ import MaterialReactTable, {
   } from 'material-react-table';
 import { MRT_Localization_ES } from 'material-react-table/locales/es';
 import { Delete, Edit, AddCircle } from '@mui/icons-material';
-import Dialog, { DialogProps } from '@mui/material/Dialog';
+import Dialog from '@mui/material/Dialog';
 import { IActionsModal, Product } from './interface';
 
 import { NewProductModal } from '../../molecules'
+
+const AmountCell = ({ value, onAddItems }: { value: number; onAddItems: (data: any) => void }) => (
+  <Chip 
+    icon={<AddCircleIcon />} 
+    sx={{'minWidth': '4rem', 'cursor': 'pointer'}}
+    color={ value < 10 ? 'error' : value >= 10 && value < 20 ? 'warning': "success" } 
+    label={value} 
+    onClick={ () => onAddItems({value})}
+  />
+);
 
 export const NewProduct = ({open,setOpen}: IActionsModal) => {
   const apiService = new ApiService
 	const [tableData, setTableData] = useState<Product[]>([]);
 	const [brands, setAllBrands] = useState<any[]>([]);
 	const [categories, setAllCategories] = useState<any[]>([]);
-  const [fullWidth, setFullWidth] = useState(true);
-  const [maxWidth, setMaxWidth] = useState<DialogProps['maxWidth']>('lg');
 	const [createModalOpen, setCreateModalOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
   const [validationErrors, setValidationErrors] = useState<{
       [cellId: string]: string;
     }>({});
@@ -79,11 +89,11 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
 	const getCommonEditTextFieldProps = useCallback(
     (
       cell: MRT_Cell<Product>,
-    ): MRT_ColumnDef<Product>['muiTableBodyCellEditTextFieldProps'] => {
+    ) => {
       return {
         error: !!validationErrors[cell.id],
         helperText: validationErrors[cell.id],
-        onBlur: (event) => {
+        onBlur: (event: React.FocusEvent<HTMLInputElement>) => {
           const isValid =
             cell.column.id === 'email'
               ? validateEmail(event.target.value)
@@ -111,6 +121,7 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
 
 	const handleCreateNewRow = async (values: any) => {
     try{
+      setIsLoading(true)
       const productsResponse: Product[] = await (await apiService.setProduct(values)).json()
       if(productsResponse){
         const parseValues = {
@@ -119,8 +130,10 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
           category: parseCategory(values.category).name
         }
         setTableData([...tableData, parseValues]);
+        setIsLoading(false)
       }
     }catch(e){
+      setIsLoading(false)
       console.log('Error al guardar el producto =>', {e})
     }
   };
@@ -131,7 +144,7 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
         accessorKey: 'name',
         header: 'Nombre del producto',
         size: 140,
-        muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+        muiTableBodyCellEditTextFieldProps: ({ cell }: { cell: any }) => ({
 					variant:"outlined",
           ...getCommonEditTextFieldProps(cell),
         }),
@@ -150,26 +163,18 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
           )),
         },
       },
-			{
+      {
         accessorKey: 'amount',
         header: 'Disponibles',
         size: 2,
-				enableEditing: false,
-        muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
-					variant:"outlined",
+        enableEditing: false,
+        muiTableBodyCellEditTextFieldProps: ({ cell }: { cell: any }) => ({
+          variant:"outlined",
           ...getCommonEditTextFieldProps(cell),
         }),
-				Cell: ({ cell }) => {
-          const value = cell.getValue<number>()
-          return (
-          <Chip 
-            icon={<AddCircleIcon />} 
-            sx={{'minWidth': '4rem', 'cursor': 'pointer'}}
-            color={ value < 10 ? 'error' : value >= 10 && value < 20 ? 'warning': "success" } 
-            label={value} 
-            onClick={ () => addItemsToInventary(cell.row.original)}
-          />
-				)},
+        Cell: ({ cell }: { cell: MRT_Cell<any> }) => (
+          <AmountCell value={cell.getValue() as number} onAddItems={() => addItemsToInventary(cell.row.original)} />
+        ),
       },
 			{
         accessorKey: 'category',
@@ -209,14 +214,14 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
         accessorKey: 'sale_price',
         header: 'Precio',
         size: 20,
-        muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+        muiTableBodyCellEditTextFieldProps: ({ cell }: { cell: any }) => ({
 					variant:"outlined",
           ...getCommonEditTextFieldProps(cell),
           type: 'number',
         }),
-				Cell: ({ cell }) => (
+				Cell: ({ cell }: { cell: any }) => (
 					<Box>
-						{cell.getValue<number>()?.toLocaleString?.('es-CO', {
+						{(cell.getValue() as number)?.toLocaleString?.('es-CO', {
 							style: 'currency',
 							currency: 'COP',
 							minimumFractionDigits: 0,
@@ -229,7 +234,7 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
         accessorKey: 'bar_code',
         header: 'Código',
         size: 140,
-        muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+        muiTableBodyCellEditTextFieldProps: ({ cell }: { cell: any }) => ({
 					variant:"outlined",
           ...getCommonEditTextFieldProps(cell),
         }),
@@ -248,6 +253,7 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
 
   const fetchListProducts = async () => {
     try{
+      setIsLoading(true)
       const products = await (await apiService.getAllProducts()).json();
       const productsParsed = products.map((element: Product) => {
         return {
@@ -256,9 +262,10 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
           category: parseCategory(element.category).name
         }
       })
-      
       setTableData(productsParsed)
+      setIsLoading(false)
     }catch(e){
+      setIsLoading(false)
       console.log('Error al obtener la lista de productos =>', {e})
     }
   }
@@ -295,10 +302,8 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
     <Dialog 
       open={open} 
       onClose={() => setOpen()}
-      //fullWidth={fullWidth}
-      //maxWidth={maxWidth}
       fullWidth={true}
-      maxWidth={'lg'}
+      maxWidth={'xl'}
     >
       <AppBar sx={{ position: 'relative' }}>
         <Toolbar>
@@ -330,10 +335,20 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
 					enableColumnFilters={false}
 					enableSorting={false}
 					initialState={{ density: 'compact' }}
-					editingMode="modal"
+          editDisplayMode="modal"
 					localization={MRT_Localization_ES}
 					columns={columns}
           data={tableData}
+          state={{ isLoading }}
+          muiCircularProgressProps={{
+            color: 'secondary',
+            thickness: 5,
+            size: 55,
+          }}
+          muiSkeletonProps={{
+            animation: 'pulse',
+            height: 28,
+          }}
           enableEditing
           onEditingRowSave={handleSaveRowEdits}
           onEditingRowCancel={handleCancelRowEdits}

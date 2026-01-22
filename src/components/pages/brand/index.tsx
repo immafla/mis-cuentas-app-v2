@@ -9,7 +9,8 @@ import {
     IconButton
 } from '@mui/material'
 import { validateRequired, validateEmail, validateAge } from '../../../utils'
-import MaterialReactTable, {
+import {
+    MaterialReactTable,
     MaterialReactTableProps,
     MRT_Cell,
     MRT_ColumnDef,
@@ -70,11 +71,11 @@ export const NewBrand = ({open,setOpen}:IActionsModal) => {
         setValidationErrors({});
     };
 
-    const getCommonEditTextFieldProps = useCallback((cell: MRT_Cell<any>,) : MRT_ColumnDef<any>['muiTableBodyCellEditTextFieldProps'] => {
+    const getCommonEditTextFieldProps = useCallback((cell: MRT_Cell<any>,) => {
         return {
             error: !!validationErrors[cell.id],
             helperText: validationErrors[cell.id],
-            onBlur: (event) => {
+            onBlur: (event: any) => {
                 const isValid =
                     cell.column.id === 'email'
                     ? validateEmail(event.target.value)
@@ -104,7 +105,7 @@ export const NewBrand = ({open,setOpen}:IActionsModal) => {
                 accessorKey: 'name',
                 header: 'Nombre de la marca',
                 size: 140,
-                muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
+                muiTableBodyCellEditTextFieldProps: ({ cell }: { cell: any }) => ({
                     variant:"outlined",
                     ...getCommonEditTextFieldProps(cell),
                 }),
@@ -158,7 +159,7 @@ export const NewBrand = ({open,setOpen}:IActionsModal) => {
 					enableColumnFilters={false}
 					enableSorting={false}
 					initialState={{ density: 'compact' }}
-					editingMode="modal"
+				    editDisplayMode="modal"
 					localization={MRT_Localization_ES}
 					columns={columns}
                     data={tableData}
