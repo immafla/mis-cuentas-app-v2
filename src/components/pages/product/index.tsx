@@ -144,7 +144,7 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
         accessorKey: 'name',
         header: 'Nombre del producto',
         size: 140,
-        muiTableBodyCellEditTextFieldProps: ({ cell }: { cell: any }) => ({
+        muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
 					variant:"outlined",
           ...getCommonEditTextFieldProps(cell),
         }),
@@ -153,7 +153,7 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
         accessorKey: 'brand',
         header: 'Marca',
         size: 40,
-        muiTableBodyCellEditTextFieldProps:{
+        muiEditTextFieldProps:{
 					variant:"outlined",
           select: true, //change to select for a dropdown
           children: brands.map((brand) => (
@@ -168,19 +168,19 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
         header: 'Disponibles',
         size: 2,
         enableEditing: false,
-        muiTableBodyCellEditTextFieldProps: ({ cell }: { cell: any }) => ({
+        muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
           variant:"outlined",
           ...getCommonEditTextFieldProps(cell),
         }),
-        Cell: ({ cell }: { cell: MRT_Cell<any> }) => (
-          <AmountCell value={cell.getValue() as number} onAddItems={() => addItemsToInventary(cell.row.original)} />
+        Cell: (props: any) => (
+          <AmountCell value={props.cell.getValue() as number} onAddItems={() => addItemsToInventary(props.cell.row.original)} />
         ),
       },
 			{
         accessorKey: 'category',
         header: 'Categoria',
 				size: 40,
-        muiTableBodyCellEditTextFieldProps: {
+        muiEditTextFieldProps: {
 					variant:"outlined",
           select: true, //change to select for a dropdown
           children: categories.map((category) => (
@@ -214,7 +214,7 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
         accessorKey: 'sale_price',
         header: 'Precio',
         size: 20,
-        muiTableBodyCellEditTextFieldProps: ({ cell }: { cell: any }) => ({
+        muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
 					variant:"outlined",
           ...getCommonEditTextFieldProps(cell),
           type: 'number',
@@ -234,7 +234,7 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
         accessorKey: 'bar_code',
         header: 'Código',
         size: 140,
-        muiTableBodyCellEditTextFieldProps: ({ cell }: { cell: any }) => ({
+        muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
 					variant:"outlined",
           ...getCommonEditTextFieldProps(cell),
         }),
