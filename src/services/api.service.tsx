@@ -83,4 +83,15 @@ export class ApiService {
             body: JSON.stringify(body)
         }) 
     }
+
+    async deleteProduct(id:string){
+        return fetch('/api/products', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            redirect: 'follow', // manual, *follow, error
+            body: JSON.stringify({id})
+        }) 
+    }
 }
