@@ -1,48 +1,35 @@
-import React, { FC, useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { validateRequired, validateEmail, validateAge } from '../../../utils'
-import Chip from '@mui/material/Chip';
+
 import { ApiService } from '../../../services/api.service'
 import {
     Button,
     Typography,
     DialogActions,
     DialogContent,
-    DialogTitle, 
     Box,
-    Tooltip,
     IconButton,
     MenuItem,
     AppBar,
     Toolbar,
-    FormControl,
-    InputLabel,
-    Select
-} from '@mui/material'
-import AddCircleIcon from '@mui/icons-material/AddCircle';
+} from '@mui/material';
+import CustomTable from '@/components/Table';
+
 import CloseIcon from '@mui/icons-material/Close';
 import {
-    MaterialReactTable,
     MaterialReactTableProps,
     MRT_Cell,
     MRT_ColumnDef,
     MRT_Row,
   } from 'material-react-table';
-import { MRT_Localization_ES } from 'material-react-table/locales/es';
-import { Delete, Edit, AddCircle } from '@mui/icons-material';
 import Dialog from '@mui/material/Dialog';
 import { IActionsModal, Product } from './interface';
 
 import { NewProductModal } from '../../molecules'
+import { productColumns } from './columns';
+import NewProductAmount from '@/components/molecules/modals/new-amount';
 
-const AmountCell = ({ value, onAddItems }: { value: number; onAddItems: (data: any) => void }) => (
-  <Chip 
-    icon={<AddCircleIcon />} 
-    sx={{'minWidth': '4rem', 'cursor': 'pointer'}}
-    color={ value < 10 ? 'error' : value >= 10 && value < 20 ? 'warning': "success" } 
-    label={value} 
-    onClick={ () => onAddItems({value})}
-  />
-);
+
 
 export const NewProduct = ({open,setOpen}: IActionsModal) => {
   const apiService = new ApiService
@@ -51,6 +38,8 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
 	const [categories, setAllCategories] = useState<any[]>([]);
 	const [createModalOpen, setCreateModalOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
+	const [addAmountModalOpen, setAddAmountModalOpen] = useState(false);
+  const [idProductSelected, setIdProductSelected] = useState<string>('');
   const [validationErrors, setValidationErrors] = useState<{
       [cellId: string]: string;
     }>({});
@@ -65,7 +54,8 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
   };
 
   const addItemsToInventary = (data:any) => {
-    console.log(data)
+    setAddAmountModalOpen(true)
+    setIdProductSelected(data._id)
   }
 
   const handleCancelRowEdits = () => {
@@ -93,27 +83,6 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
       return {
         error: !!validationErrors[cell.id],
         helperText: validationErrors[cell.id],
-        onBlur: (event: React.FocusEvent<HTMLInputElement>) => {
-          const isValid =
-            cell.column.id === 'email'
-              ? validateEmail(event.target.value)
-              : cell.column.id === 'age'
-              ? validateAge(+event.target.value)
-              : validateRequired(event.target.value);
-          if (!isValid) {
-            //set validation error for cell if invalid
-            setValidationErrors({
-              ...validationErrors,
-              [cell.id]: `${cell.column.columnDef.header} is required`,
-            });
-          } else {
-            //remove validation error for cell if valid
-            delete validationErrors[cell.id];
-            setValidationErrors({
-              ...validationErrors,
-            });
-          }
-        },
       };
     },
     [validationErrors],
@@ -139,108 +108,8 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
   };
 
   const columns = useMemo<MRT_ColumnDef<Product>[]>(
-    () => [
-      {
-        accessorKey: 'name',
-        header: 'Nombre del producto',
-        size: 140,
-        muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
-					variant:"outlined",
-          ...getCommonEditTextFieldProps(cell),
-        }),
-      },
-			{
-        accessorKey: 'brand',
-        header: 'Marca',
-        size: 40,
-        muiEditTextFieldProps:{
-					variant:"outlined",
-          select: true, //change to select for a dropdown
-          children: brands.map((brand) => (
-            <MenuItem key={brand._id} value={brand.name}>
-              {brand.name}
-            </MenuItem>
-          )),
-        },
-      },
-      {
-        accessorKey: 'amount',
-        header: 'Disponibles',
-        size: 2,
-        enableEditing: false,
-        muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
-          variant:"outlined",
-          ...getCommonEditTextFieldProps(cell),
-        }),
-        Cell: (props: any) => (
-          <AmountCell value={props.cell.getValue() as number} onAddItems={() => addItemsToInventary(props.cell.row.original)} />
-        ),
-      },
-			{
-        accessorKey: 'category',
-        header: 'Categoria',
-				size: 40,
-        muiEditTextFieldProps: {
-					variant:"outlined",
-          select: true, //change to select for a dropdown
-          children: categories.map((category) => (
-            <MenuItem key={category._id} value={category.name}>
-              {category.name}
-            </MenuItem>
-          )),
-        },
-      },
-			// {
-      //   accessorKey: 'purchase_price',
-      //   header: 'Precio de compra',
-      //   size: 20,
-      //   muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
-			// 		variant:"outlined",
-      //     ...getCommonEditTextFieldProps(cell),
-      //     type: 'number',
-      //   }),
-			// 	Cell: ({ cell }) => (
-			// 		<Box>
-			// 			{cell.getValue<number>()?.toLocaleString?.('es-CO', {
-			// 				style: 'currency',
-			// 				currency: 'COP',
-			// 				minimumFractionDigits: 0,
-			// 				maximumFractionDigits: 0,
-			// 			})}
-			// 		</Box>
-			// 	),
-      // },
-      {
-        accessorKey: 'sale_price',
-        header: 'Precio',
-        size: 20,
-        muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
-					variant:"outlined",
-          ...getCommonEditTextFieldProps(cell),
-          type: 'number',
-        }),
-				Cell: ({ cell }: { cell: any }) => (
-					<Box>
-						{(cell.getValue() as number)?.toLocaleString?.('es-CO', {
-							style: 'currency',
-							currency: 'COP',
-							minimumFractionDigits: 0,
-							maximumFractionDigits: 0,
-						})}
-					</Box>
-				),
-      },
-      {
-        accessorKey: 'bar_code',
-        header: 'Código',
-        size: 140,
-        muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
-					variant:"outlined",
-          ...getCommonEditTextFieldProps(cell),
-        }),
-      },
-    ],
-    [getCommonEditTextFieldProps],
+    () => productColumns(brands, categories, getCommonEditTextFieldProps, addItemsToInventary),
+    [getCommonEditTextFieldProps, brands, categories, validationErrors],
   );
 
   const parseBrand = (brandCode: string) => {
@@ -318,84 +187,30 @@ export const NewProduct = ({open,setOpen}: IActionsModal) => {
             <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
                 Inventario
             </Typography>
-            <Button autoFocus color="inherit" onClick={setOpen}>
-                Guardar
-            </Button>
         </Toolbar>
       </AppBar>
 
       <DialogContent>
-        <MaterialReactTable
-					positionActionsColumn="last"
-					muiTableBodyRowProps={{ hover: false }}
-					enableDensityToggle={false}
-					enableFullScreenToggle={false}
-					enableHiding={false}
-					enableRowOrdering={false}
-					enableColumnFilters={false}
-					enableSorting={false}
-					initialState={{ density: 'compact' }}
-          editDisplayMode="modal"
-					localization={MRT_Localization_ES}
-					columns={columns}
-          data={tableData}
-          state={{ isLoading }}
-          muiCircularProgressProps={{
-            color: 'secondary',
-            thickness: 5,
-            size: 55,
-          }}
-          muiSkeletonProps={{
-            animation: 'pulse',
-            height: 28,
-          }}
-          enableEditing
-          onEditingRowSave={handleSaveRowEdits}
-          onEditingRowCancel={handleCancelRowEdits}
-          displayColumnDefOptions={{
-						'mrt-row-actions': {
-								header: 'Editar producto',
-								muiTableHeadCellProps: {
-									align: 'left'
-								},
-								size: 20,
-						},
-          }}
-					muiSearchTextFieldProps={{
-						placeholder: 'Buscar productos',
-						sx: { minWidth: '400px' },
-						variant: 'outlined',
-					}}
-          renderRowActions={({ row, table }) => (
-						<Box sx={{ display: 'flex', gap: '1rem' }}>
-              <Tooltip arrow placement="left" title="Editr">
-                  <IconButton onClick={() => table.setEditingRow(row)}>
-                      <Edit />
-                  </IconButton>
-              </Tooltip>
-              <Tooltip arrow placement="right" title="Delete">
-                  <IconButton color="error" onClick={() => handleDeleteRow(row)}>
-                      <Delete />
-                  </IconButton>
-              </Tooltip>
-            </Box>
-					)}
-          renderTopToolbarCustomActions={() => (
-						<Button
-							color="primary"
-							onClick={() => setCreateModalOpen(true)}
-							variant="contained"
-						>
-							<Box sx={{ display: 'flex', flexDirection: 'row', alignItems:'left',justifyContent:'left' ,gap: '0.5rem' }}>
-								<AddCircle color="secondary"/>Nuevo
-							</Box>
-						</Button>
-          )}
+        <CustomTable 
+          columns={columns}
+          tableData={tableData}
+          isLoading={isLoading}
+          handleSaveRowEdits={handleSaveRowEdits}
+          handleCancelRowEdits={handleCancelRowEdits}
+          handleDeleteRow={handleDeleteRow}
+          setCreateModalOpen={setCreateModalOpen}
         />
+
 				<NewProductModal
 					columns={columns}
 					open={createModalOpen}
 					onClose={() => setCreateModalOpen(false)}
+					onSubmit={handleCreateNewRow}
+				/>
+        <NewProductAmount
+          idProduct={idProductSelected}
+					open={addAmountModalOpen}
+					onClose={() => setAddAmountModalOpen(false)}
 					onSubmit={handleCreateNewRow}
 				/>
       </DialogContent>

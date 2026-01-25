@@ -1,7 +1,14 @@
 import React from 'react'
 
 export class ApiService {
-    
+
+    async updateProductsAmount(id: string, amount: number){
+        return await fetch(`/api/products/amount`, {
+            method: 'PUT',
+            body: JSON.stringify({ id, amount })
+        })   
+    } 
+
     async getAllCategories(){
         return await fetch('/api/categories', {
             method: 'GET',

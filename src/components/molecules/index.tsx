@@ -1,3 +1,3 @@
 export * from './modals'
 export { MiniDrawer } from './drawer';
-export { Modal } from './modal';
+export { Modal } from '../Modal';

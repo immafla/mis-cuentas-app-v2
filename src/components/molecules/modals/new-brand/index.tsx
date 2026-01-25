@@ -1,5 +1,5 @@
 import React , { FC, useState } from 'react'
-import { Modal } from '../../modal/index'
+import { Modal } from '../../../Modal/index'
 import { MRT_ColumnDef } from 'material-react-table';
 import { TextField } from '@mui/material'
 
@@ -22,7 +22,7 @@ export const NewBrandModal: FC<{
     }
 
     return (
-        <Modal open={open} onClose={onClose} onSubmit={onSubmitModal}>
+        <Modal open={open} onClose={onClose} onSubmit={onSubmitModal} title="Nueva marca">
             <>
                 {columns.map((column, index) => 
                     <TextField

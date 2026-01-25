@@ -10,11 +10,12 @@ import {
 import Dialog, { DialogProps } from '@mui/material/Dialog';
 
 export const Modal: FC<{
+	title: string;
     children: JSX.Element | JSX.Element[];
 	onClose: () => void;
 	onSubmit: () => void;
 	open: boolean;
-}> = ({ open, onClose, onSubmit, children }) => {
+}> = ({ open, onClose, onSubmit, children, title }) => {
 
 	const handleSubmit = () => {
 		onSubmit();
@@ -23,7 +24,7 @@ export const Modal: FC<{
 
 	return (
 		<Dialog open={open}>
-			<DialogTitle textAlign="center">Crear nuevo producto</DialogTitle>
+			<DialogTitle textAlign="center">{title}</DialogTitle>
 			<DialogContent>
 				<form onSubmit={(e) => e.preventDefault()} >
 					<Stack
@@ -41,7 +42,7 @@ export const Modal: FC<{
 			<DialogActions sx={{ p: '1.25rem' }}>
 				<Button onClick={onClose}>Cancel</Button>
 				<Button color="primary" onClick={handleSubmit} variant="contained">
-					Crear
+					Aceptar
 				</Button>
 			</DialogActions>
 		</Dialog>

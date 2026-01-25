@@ -1,7 +1,6 @@
 import React , { FC, useState, useEffect, SetStateAction } from 'react'
-import { Modal } from '../../modal/index'
+import { Modal } from '../../../Modal/index'
 import { MRT_ColumnDef } from 'material-react-table';
-import OutlinedInput from '@mui/material/OutlinedInput';
 import styles from './styles.module.css';
 import {
     MenuItem,
@@ -10,7 +9,8 @@ import {
     InputLabel,
     Select,
     Box,
-    InputAdornment
+    InputAdornment,
+    OutlinedInput
 } from '@mui/material'
 // import { Product } from '../../../pages/product/interface';
 import { ApiService } from '../../../../services/api.service'
@@ -97,7 +97,7 @@ export const NewProductModal: FC<{
     },[values])
 
     return (
-        <Modal open={open} onClose={onClose} onSubmit={onSubmitModal}>
+        <Modal open={open} onClose={onClose} onSubmit={onSubmitModal} title="Crear nuevo producto">
             <Box className={styles.container}> 
                 {columns.map((column, index) => {
                     return(
