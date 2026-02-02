@@ -2,33 +2,32 @@ import React, { useMemo, useCallback, useState, useEffect } from 'react'
 import {
     Button,
     DialogActions,
-    DialogContent,
-    DialogTitle, 
-    Box,
-    Tooltip,
-    IconButton
+    DialogContent, 
+    Typography,
+    IconButton,
+    AppBar,
+    Toolbar,
 } from '@mui/material'
+import CloseIcon from "@mui/icons-material/Close";
 import { validateRequired, validateEmail, validateAge } from '../../../utils'
+import { brandColumns } from "./columns";
 import {
-    MaterialReactTable,
     MaterialReactTableProps,
     MRT_Cell,
     MRT_ColumnDef,
     MRT_Row,
 } from 'material-react-table';
-
-import { Delete, Edit, AddCircle } from '@mui/icons-material';
+import CustomTable from "@/components/Table";
 import { NewBrandModal } from '../../molecules'
-
-import { MRT_Localization_ES } from 'material-react-table/locales/es';
-
-import Dialog, { DialogProps } from '@mui/material/Dialog';
+import Dialog from '@mui/material/Dialog';
 import { IActionsModal } from './interface';
 import { ApiService } from '../../../services/api.service';
+import { createBrand, deleteBrandById, updateBrandById } from '@/services/brands.service';
 
 export const NewBrand = ({open,setOpen}:IActionsModal) => {
     const api = new ApiService()
     const [name, setName] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [tableData, setTableData] = useState<any[]>(()=> [{}]);
     const [validationErrors, setValidationErrors] = useState<{
@@ -38,8 +37,14 @@ export const NewBrand = ({open,setOpen}:IActionsModal) => {
     const handleSaveRowEdits: MaterialReactTableProps<any>['onEditingRowSave'] =
         async ({ exitEditingMode, row, values }) => {
         if (!Object.keys(validationErrors).length) {
-            tableData[row.index] = values;
-            setTableData([...tableData]);
+            await updateBrandById(row.original._id, values.name)
+            setTableData((prev) =>
+                prev.map((item, index) =>
+                    index === row.index
+                        ? { ...item, name: values.name.toUpperCase() }
+                        : item,
+                ),
+            );
             exitEditingMode();
         }
     };
@@ -48,21 +53,17 @@ export const NewBrand = ({open,setOpen}:IActionsModal) => {
 
     }
 
-
     const handleDeleteRow = useCallback(async (row: MRT_Row<any>) => {
-            // if (!confirm(`Are you sure you want to delete ${row.getValue('name')}`)) {
-            //     console.log({row})
-            //     return;
-            // }
+            if (!confirm(`Seguro quiere borrar la marca ${row.getValue('name')}`)) {
+                console.log({row})
+                return;
+            }
             // if(validateBrandIsUsed(row.original._id)){
-
+            // console.log('el id: ',row.original._id)
             // }
-            const response = await api.deleteBrand({_id:row.original._id})
-            console.log({response})
-            console.log(row.original)
-            //send api delete request here, then refetch or update local table data for re-render
-            // tableData.splice(row.index, 1);
-            // setTableData([...tableData]);
+            await deleteBrandById(row.original._id)
+            tableData.splice(row.index, 1);
+            setTableData([...tableData]);
         },
         [tableData],
     );
@@ -71,26 +72,27 @@ export const NewBrand = ({open,setOpen}:IActionsModal) => {
         setValidationErrors({});
     };
 
-    const getCommonEditTextFieldProps = useCallback((cell: MRT_Cell<any>,) => {
+    const getCommonEditTextFieldProps = useCallback((cell: unknown) => {
+        const typedCell = cell as MRT_Cell<any>;
         return {
-            error: !!validationErrors[cell.id],
-            helperText: validationErrors[cell.id],
+            error: !!validationErrors[typedCell.id],
+            helperText: validationErrors[typedCell.id],
             onBlur: (event: any) => {
                 const isValid =
-                    cell.column.id === 'email'
+                    typedCell.column.id === 'email'
                     ? validateEmail(event.target.value)
-                    : cell.column.id === 'age'
+                    : typedCell.column.id === 'age'
                     ? validateAge(+event.target.value)
                     : validateRequired(event.target.value);
                 if (!isValid) {
                 //set validation error for cell if invalid
                 setValidationErrors({
                     ...validationErrors,
-                    [cell.id]: `${cell.column.columnDef.header} is required`,
+                    [typedCell.id]: `${typedCell.column.columnDef.header} is required`,
                 });
             } else {
                 //remove validation error for cell if valid
-                delete validationErrors[cell.id];
+                delete validationErrors[typedCell.id];
                 setValidationErrors({
                     ...validationErrors,
                 });
@@ -99,44 +101,32 @@ export const NewBrand = ({open,setOpen}:IActionsModal) => {
         }
     },[validationErrors]);
 
-    const columns = useMemo<MRT_ColumnDef<any>[]>(
-        () => [
-            {
-                accessorKey: 'name',
-                header: 'Nombre de la marca',
-                size: 140,
-                muiTableBodyCellEditTextFieldProps: ({ cell }: { cell: any }) => ({
-                    variant:"outlined",
-                    ...getCommonEditTextFieldProps(cell),
-                }),
-            }
-        ],
-        [getCommonEditTextFieldProps],
-    );
-
     const handleCreateNewRow = async (values: any) => {
-        tableData.push(values);
-        const addNewBrand = await api.setBrand(values)
-        const addNewBrandData = await addNewBrand.json()
-        if(addNewBrandData.acknowledged){
-            setTableData([...tableData]);
+        if(values.name === ''){
+            alert('El nombre es obligatorio')
+            return
         }
+        setIsLoading(true);
+        await createBrand(values.name)
+        setTableData([...tableData, {name: values.name.toUpperCase()}]);
+        setIsLoading(false);
     };
 
-    const saveBrand = async () => {
-        const bussines = await api.setBussines({name})
-        const response = await bussines.json()
-        if(response){
-            setOpen()
-            setName('')
-        }
-    }
+    const columns = useMemo<MRT_ColumnDef<any>[]>(
+        () =>
+          brandColumns(
+            getCommonEditTextFieldProps,
+          ),
+        [getCommonEditTextFieldProps, validationErrors],
+      );
 
     useEffect(()=> {
         (async ()=>{
+            setIsLoading(true)
             const brands = await api.getAllBrands()
             const brandsData = await brands.json()
             setTableData(brandsData)
+            setIsLoading(false)
         })()
     },[])
 
@@ -147,64 +137,30 @@ export const NewBrand = ({open,setOpen}:IActionsModal) => {
             fullWidth={true}
             maxWidth={'sm'}
         >
-            <DialogTitle>Ingresa el nombre de la marca</DialogTitle>
+            <AppBar sx={{ position: "relative" }}>
+                <Toolbar>
+                <IconButton
+                    edge="start"
+                    color="inherit"
+                    onClick={setOpen}
+                    aria-label="close"
+                >
+                    <CloseIcon />
+                </IconButton>
+                <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+                    Marcas
+                </Typography>
+                </Toolbar>
+            </AppBar>
             <DialogContent>
-                <MaterialReactTable
-					positionActionsColumn="last"
-					muiTableBodyRowProps={{ hover: false }}
-					enableDensityToggle={false}
-					enableFullScreenToggle={false}
-					enableHiding={false}
-					enableRowOrdering={false}
-					enableColumnFilters={false}
-					enableSorting={false}
-					initialState={{ density: 'compact' }}
-				    editDisplayMode="modal"
-					localization={MRT_Localization_ES}
-					columns={columns}
-                    data={tableData}
-                    enableEditing
-                    onEditingRowSave={handleSaveRowEdits}
-                    onEditingRowCancel={handleCancelRowEdits}
-                    displayColumnDefOptions={{
-						'mrt-row-actions': {
-								header: 'Editar marca',
-								muiTableHeadCellProps: {
-									align: 'left'
-								},
-								size: 20,
-						},
-                    }}
-					muiSearchTextFieldProps={{
-						placeholder: 'Buscar marcas',
-						sx: { minWidth: '400px' },
-						variant: 'outlined',
-					}}
-                    renderRowActions={({ row, table }) => (
-                        <Box sx={{ display: 'flex', gap: '1rem' }}>
-                            <Tooltip arrow placement="left" title="Editar">
-                                <IconButton onClick={() => table.setEditingRow(row)}>
-                                    <Edit />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip arrow placement="right" title="Borrar">
-                                <IconButton color="error" onClick={() => handleDeleteRow(row)}>
-                                    <Delete />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
-					)}
-                    renderTopToolbarCustomActions={() => (
-						<Button
-							color="primary"
-							onClick={() => setCreateModalOpen(true)}
-							variant="contained"
-						>
-							<Box sx={{ display: 'flex', gap: '1rem' }}>
-								<AddCircle color="secondary"/>  Crear marca
-							</Box>
-						</Button>
-                    )}
+                <CustomTable
+                    columns={columns}
+                    tableData={tableData}
+                    isLoading={isLoading}
+                    handleSaveRowEdits={handleSaveRowEdits}
+                    handleCancelRowEdits={handleCancelRowEdits}
+                    handleDeleteRow={handleDeleteRow}
+                    setCreateModalOpen={setCreateModalOpen}
                 />
                 <NewBrandModal
                     columns={columns}
@@ -213,10 +169,10 @@ export const NewBrand = ({open,setOpen}:IActionsModal) => {
                     onSubmit={handleCreateNewRow}
                 />
             </DialogContent>
-
             <DialogActions>
-                <Button onClick={() => setOpen()}>Cancelar</Button>
-                <Button variant="contained" onClick={() => saveBrand()}>Crear</Button>
+                <Button variant="contained" onClick={() => setOpen()}>
+                    Cerrar
+                </Button>
             </DialogActions>
         </Dialog>
     )
