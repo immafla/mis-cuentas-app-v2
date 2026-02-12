@@ -16,6 +16,29 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Login con Google
+
+El proyecto usa `next-auth` para iniciar sesión con Google.
+
+1. Crea un archivo `.env.local` en la raíz del proyecto.
+2. Agrega estas variables:
+
+```bash
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=tu_clave_larga_y_segura
+GOOGLE_CLIENT_ID=tu_google_client_id
+GOOGLE_CLIENT_SECRET=tu_google_client_secret
+```
+
+3. En Google Cloud Console crea credenciales OAuth 2.0 (Web application).
+4. Autoriza este redirect URI:
+
+```bash
+http://localhost:3000/api/auth/callback/google
+```
+
+5. Reinicia el servidor (`pnpm dev`) y entra a `/login`.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

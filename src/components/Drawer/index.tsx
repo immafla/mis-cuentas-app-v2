@@ -17,10 +17,12 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import Button from "@mui/material/Button";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import NoteAltSharpIcon from "@mui/icons-material/NoteAltSharp";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import HomeFilledIcon from "@mui/icons-material/HomeFilled";
+import { signOut, useSession } from "next-auth/react";
 
 const drawerWidth = 240;
 
@@ -117,6 +119,7 @@ export const MiniDrawer = ({
 }: MiniDrawerProps) => {
   const theme = useTheme();
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [open, setOpen] = React.useState(true);
 
   const mainItems = React.useMemo<DrawerItem[]>(
@@ -228,6 +231,20 @@ export const MiniDrawer = ({
           <Typography variant="h6" noWrap component="div">
             Y a beber!
           </Typography>
+          <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 2 }}>
+            <Typography variant="body2" noWrap>
+              {session?.user?.name ?? session?.user?.email ?? "Usuario"}
+            </Typography>
+            <Button
+              color="inherit"
+              variant="outlined"
+              size="small"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              sx={{ borderColor: "rgba(255,255,255,0.4)" }}
+            >
+              Cerrar sesión
+            </Button>
+          </Box>
         </Toolbar>
       </AppBar>
 
