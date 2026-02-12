@@ -21,44 +21,11 @@ export type ProductSearchOption = {
   bar_code: string;
 };
 
-const initialMockProducts: SaleLineItem[] = [
-  {
-    id: "mock-product-1",
-    barCode: "000000000001",
-    name: "Producto de prueba",
-    price: 2500,
-    amount: 10,
-    quantity: 2,
-  },
-  {
-    id: "mock-product-2",
-    barCode: "000000000002",
-    name: "Gaseosa 1.5L",
-    price: 4200,
-    amount: 15,
-    quantity: 1,
-  },
-  {
-    id: "mock-product-3",
-    barCode: "000000000003",
-    name: "Papas fritas",
-    price: 1800,
-    amount: 25,
-    quantity: 2,
-  },
-  {
-    id: "mock-product-4",
-    barCode: "000000000004",
-    name: "Chocolate barra",
-    price: 2200,
-    amount: 18,
-    quantity: 1,
-  },
-];
+const initialSaleProducts: SaleLineItem[] = [];
 
 export const useSales = () => {
   const [listSelectedProducts, setListSelectedProducts] =
-    useState<SaleLineItem[]>(initialMockProducts);
+    useState<SaleLineItem[]>(initialSaleProducts);
   const [isPaying, setIsPaying] = useState(false);
   const [productSearchInput, setProductSearchInput] = useState("");
   const [productSearchOptions, setProductSearchOptions] = useState<
