@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mis Cuentas">
+  <rect width="512" height="512" fill="#0f172a" />
+  <rect x="96" y="120" width="320" height="48" rx="24" fill="#38bdf8" />
+  <rect x="96" y="216" width="260" height="48" rx="24" fill="#e2e8f0" />
+  <rect x="96" y="312" width="200" height="48" rx="24" fill="#e2e8f0" />
+  <circle cx="392" cy="328" r="24" fill="#38bdf8" />
+</svg>
