@@ -18,11 +18,14 @@ export const metadata: Metadata = {
   title: "Mis Cuentas",
   description: "Mis cuentas app",
   manifest: "/manifest.webmanifest",
-  themeColor: "#0f172a",
   icons: {
     icon: "/icons/icon.svg",
     apple: "/icons/icon.svg",
   },
+};
+
+export const viewport = {
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({
