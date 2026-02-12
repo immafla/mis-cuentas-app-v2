@@ -2,10 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from "@/lib/mongodb";
 import Product from "@/lib/models/Product";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    const products = await Product.find({});
+
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get("q")?.trim() ?? "";
+    const limitParam = Number(searchParams.get("limit") ?? "10");
+    const limit = Number.isFinite(limitParam)
+      ? Math.min(Math.max(limitParam, 1), 50)
+      : 10;
+
+    const filters = query
+      ? {
+          $or: [
+            { name: { $regex: query, $options: "i" } },
+            { bar_code: { $regex: query, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const products = await Product.find(filters)
+      .sort({ name: 1 })
+      .limit(limit)
+      .lean();
+
     return NextResponse.json(products);
   } catch (error) {
     console.error('Error fetching products:', error);

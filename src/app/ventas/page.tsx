@@ -1,8 +1,12 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+
 import {
+  Alert,
+  Autocomplete,
   Button,
+  CircularProgress,
   Typography,
   Container,
   Box,
@@ -13,145 +17,56 @@ import {
   Divider,
   Paper,
   Stack,
+  Snackbar,
   Chip,
+  TextField,
 } from "@mui/material";
 
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import Avatar from "@mui/material/Avatar";
 import LiquorIcon from "@mui/icons-material/Liquor";
-import {
-  getProductByBarcode,
-  updateProductsAmountBatch,
-} from "../../services/products.service";
+import { ProductSearchOption, useSales } from "./hooks/useSales";
 
-type SaleLineItem = {
-  id: string;
-  barCode: string;
-  name: string;
-  price: number;
-  amount: number;
-};
 const NewSale = () => {
-  const [listSelectedProducts, setListSelectedProducts] = useState<
-    SaleLineItem[]
-  >([
-    {
-      id: "mock-product-1",
-      barCode: "000000000001",
-      name: "Producto de prueba",
-      price: 2500,
-      amount: 10,
-    },
-  ]);
-  const [isPaying, setIsPaying] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  const bufferRef = useRef("");
-  const lastKeyTimeRef = useRef(0);
-
-  const addProductByBarcode = useCallback(async (barCode: string) => {
-    try {
-      const { success, data } = await getProductByBarcode(barCode);
-
-      if (!success || !data) {
-        throw new Error("Producto no encontrado");
-      }
-
-      setListSelectedProducts((prevState) => [
-        ...prevState,
-        {
-          id: data._id,
-          barCode,
-          name: data.name,
-          price: data.sale_price,
-          amount: data.amount ?? 0,
-        },
-      ]);
-    } catch (error) {
-      console.error("Error al obtener producto por código de barras", error);
-    }
-  }, []);
-
-  const total = useMemo(
-    () =>
-      listSelectedProducts.reduce((sum, item) => sum + (item.price ?? 0), 0),
-    [listSelectedProducts],
-  );
-
-  const handlePay = useCallback(async () => {
-    if (listSelectedProducts.length === 0 || isPaying) {
-      return;
-    }
-
-    setIsPaying(true);
-    try {
-      const grouped = listSelectedProducts.reduce((acc, item) => {
-        const existing = acc.get(item.id);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          acc.set(item.id, {
-            id: item.id,
-            amount: item.amount ?? 0,
-            count: 1,
-          });
-        }
-        return acc;
-      }, new Map<string, { id: string; amount: number; count: number }>());
-
-      const updates = Array.from(grouped.values()).map(
-        ({ id, amount, count }) => ({
-          id,
-          amount: Math.max((amount ?? 0) - count, 0),
-        }),
-      );
-
-      await updateProductsAmountBatch(updates);
-
-      setListSelectedProducts([]);
-    } catch (error) {
-      console.error("Error al actualizar el inventario", error);
-    } finally {
-      setIsPaying(false);
-    }
-  }, [isPaying, listSelectedProducts]);
+  const {
+    groupedSelectedProducts,
+    total,
+    totalItems,
+    isPaying,
+    productSearchInput,
+    productSearchOptions,
+    isSearchingProducts,
+    stockWarning,
+    setProductSearchInput,
+    clearStockWarning,
+    handleSelectSearchedProduct,
+    handleRemoveOneProduct,
+    handleIncreaseProductQuantity,
+    handleSetProductQuantity,
+    handlePay,
+  } = useSales();
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const currentTime = Date.now();
+    const handleShortcut = (event: KeyboardEvent) => {
+      const isCtrlK = event.ctrlKey && event.key.toLowerCase() === "k";
 
-      // 1. Calcular velocidad: Los lectores disparan teclas con < 30ms de diferencia
-      const diff = currentTime - lastKeyTimeRef.current;
-      lastKeyTimeRef.current = currentTime;
-
-      // 2. Si el usuario presiona Enter, el escaneo terminó
-      if (event.key === "Enter") {
-        const scannedBarCode = bufferRef.current;
-        bufferRef.current = ""; // Limpiar para la siguiente lectura
-
-        if (scannedBarCode.length > 2) {
-          // Evitar falsos positivos
-          addProductByBarcode(scannedBarCode);
-        }
+      if (!isCtrlK) {
         return;
       }
 
-      // 3. Limpiar buffer si pasó demasiado tiempo (el usuario está escribiendo manual)
-      if (diff > 100) {
-        bufferRef.current = "";
-      }
-
-      // 4. Acumular solo caracteres válidos (evitar Shift, Alt, etc.)
-      if (event.key.length === 1) {
-        bufferRef.current += event.key;
-      }
+      event.preventDefault();
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
     };
 
-    globalThis.addEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleShortcut);
 
     return () => {
-      globalThis.removeEventListener("keydown", handleKeyDown);
+      globalThis.removeEventListener("keydown", handleShortcut);
     };
-  }, [addProductByBarcode]);
+  }, []);
 
   return (
     <Container fixed sx={{ py: 3 }}>
@@ -174,26 +89,88 @@ const NewSale = () => {
                 borderColor: "divider",
               }}
             >
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-              >
-                <Typography variant="h6" component="div">
-                  Listado de productos
-                </Typography>
-                <Chip
-                  label={`${listSelectedProducts.length} items`}
-                  color="primary"
-                  variant="outlined"
-                  size="small"
+              <Stack spacing={2}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                >
+                  <Typography variant="h6" component="div">
+                    Listado de productos
+                  </Typography>
+                  <Chip
+                    label={`${totalItems} items`}
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                  />
+                </Stack>
+
+                <Autocomplete<ProductSearchOption, false, false, false>
+                  options={productSearchOptions}
+                  loading={isSearchingProducts}
+                  autoHighlight
+                  openOnFocus
+                  selectOnFocus
+                  handleHomeEndKeys
+                  clearOnBlur={false}
+                  value={null}
+                  inputValue={productSearchInput}
+                  onInputChange={(_, newInputValue) =>
+                    setProductSearchInput(newInputValue)
+                  }
+                  onChange={(_, selectedOption) =>
+                    handleSelectSearchedProduct(selectedOption)
+                  }
+                  filterOptions={(options) => options}
+                  isOptionEqualToValue={(option, value) =>
+                    option._id === value._id
+                  }
+                  getOptionLabel={(option) => option.name}
+                  noOptionsText={
+                    productSearchInput.trim().length < 2
+                      ? "Escribe al menos 2 caracteres"
+                      : "No se encontraron productos"
+                  }
+                  loadingText="Buscando productos..."
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} key={option._id}>
+                      <Stack sx={{ width: "100%" }}>
+                        <Typography fontWeight={600}>{option.name}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {`Cod.: ${option.bar_code} • Stock: ${option.amount} • $ ${option.sale_price}`}
+                        </Typography>
+                      </Stack>
+                    </Box>
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      inputRef={searchInputRef}
+                      size="small"
+                      label="Buscar y añadir producto"
+                      placeholder="Nombre o código de barras"
+                      helperText="Usa ↑ ↓ + Enter para seleccionar. Atajo: Ctrl+K"
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {isSearchingProducts ? (
+                              <CircularProgress color="inherit" size={18} />
+                            ) : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
                 />
               </Stack>
             </Box>
 
             <Box sx={{ maxHeight: "60vh", overflow: "auto" }}>
               <List sx={{ px: 2, py: 1 }}>
-                {listSelectedProducts.length === 0 && (
+                {totalItems === 0 && (
                   <ListItem sx={{ py: 3 }}>
                     <ListItemText
                       primary="No hay productos escaneados"
@@ -201,8 +178,8 @@ const NewSale = () => {
                     />
                   </ListItem>
                 )}
-                {listSelectedProducts.map((element, index) => (
-                  <Box key={`${index}-${element.barCode}`}>
+                {groupedSelectedProducts.map((element) => (
+                  <Box key={`${element.id}-${element.barCode}`}>
                     <ListItem sx={{ py: 1.5 }}>
                       <ListItemAvatar>
                         <Avatar
@@ -216,12 +193,69 @@ const NewSale = () => {
                       </ListItemAvatar>
                       <ListItemText
                         primary={element.name}
-                        secondary={`Cod.: ${element.barCode}`}
+                        secondary={
+                          <>
+                            <Typography variant="body2" color="text.secondary">
+                              {`Cod.: ${element.barCode}`}
+                            </Typography>
+                            <Typography
+                              sx={{ fontSize: "14px", fontWeight: 500 }}
+                            >
+                              {`Cantidad: ${element.quantity}`}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {`Stock: ${element.amount}`}
+                            </Typography>
+                          </>
+                        }
                         primaryTypographyProps={{ fontWeight: 600 }}
                       />
-                      <Typography variant="h6" component="div">
-                        {`$ ${element.price}`}
-                      </Typography>
+                      <Stack alignItems="flex-end" spacing={1}>
+                        <Typography variant="h6" component="div">
+                          {`$ ${element.price * element.quantity}`}
+                        </Typography>
+                        <Stack direction="row" spacing={1}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            onClick={() => handleRemoveOneProduct(element.id)}
+                          >
+                            -
+                          </Button>
+                          <TextField
+                            size="small"
+                            type="number"
+                            value={element.quantity}
+                            onChange={(event) =>
+                              handleSetProductQuantity(
+                                element.id,
+                                Number(event.target.value),
+                              )
+                            }
+                            inputProps={{
+                              min: 1,
+                              max: element.amount,
+                              style: {
+                                width: 52,
+                                textAlign: "center",
+                                padding: "6px 8px",
+                              },
+                            }}
+                          />
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            onClick={() =>
+                              handleIncreaseProductQuantity(element.id)
+                            }
+                            disabled={element.quantity >= (element.amount ?? 0)}
+                          >
+                            +
+                          </Button>
+                        </Stack>
+                      </Stack>
                     </ListItem>
                     <Divider variant="inset" component="li" />
                   </Box>
@@ -260,7 +294,7 @@ const NewSale = () => {
                   variant="contained"
                   color="primary"
                   onClick={handlePay}
-                  disabled={isPaying || listSelectedProducts.length === 0}
+                  disabled={isPaying || totalItems === 0}
                 >
                   {isPaying ? "Procesando..." : "Pagar"}
                 </Button>
@@ -269,6 +303,17 @@ const NewSale = () => {
           </Paper>
         </Grid>
       </Grid>
+
+      <Snackbar
+        open={Boolean(stockWarning)}
+        autoHideDuration={2500}
+        onClose={clearStockWarning}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={clearStockWarning} severity="warning" variant="filled">
+          {stockWarning}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
