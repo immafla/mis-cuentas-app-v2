@@ -4,12 +4,7 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Box, Container, Stack, Typography } from "@mui/material";
 import { ApiService } from "../../services/api.service";
 import CustomTable from "@/components/Table";
-import {
-  MaterialReactTableProps,
-  MRT_Cell,
-  MRT_ColumnDef,
-  MRT_Row,
-} from "material-react-table";
+import { MaterialReactTableProps, MRT_Cell, MRT_ColumnDef, MRT_Row } from "material-react-table";
 
 import { NewProductModal } from "./components/new-product";
 import { productColumns } from "./columns";
@@ -37,15 +32,9 @@ type Category = {
 
 type ProductWithId = Product & { _id: string };
 
-const mapProduct = (
-  product: Product,
-  brands: Brand[],
-  categories: Category[],
-) => {
+const mapProduct = (product: Product, brands: Brand[], categories: Category[]) => {
   const brandName = brands.find((brand) => brand._id === product.brand)?.name;
-  const categoryName = categories.find(
-    (category) => category._id === product.category,
-  )?.name;
+  const categoryName = categories.find((category) => category._id === product.category)?.name;
 
   return {
     ...product,
@@ -67,12 +56,13 @@ export default function InventarioPage() {
     [cellId: string]: string;
   }>({});
 
-  const handleSaveRowEdits: MaterialReactTableProps<Product>["onEditingRowSave"] =
-    async ({ exitEditingMode }) => {
-      if (!Object.keys(validationErrors).length) {
-        exitEditingMode();
-      }
-    };
+  const handleSaveRowEdits: MaterialReactTableProps<Product>["onEditingRowSave"] = async ({
+    exitEditingMode,
+  }) => {
+    if (!Object.keys(validationErrors).length) {
+      exitEditingMode();
+    }
+  };
 
   const addItemsToInventary = (data: ProductWithId) => {
     setAddAmountModalOpen(true);
@@ -104,9 +94,7 @@ export default function InventarioPage() {
   const handleCreateNewRow = async (values: Product) => {
     try {
       setIsLoading(true);
-      const productsResponse: Product[] = await (
-        await apiService.setProduct(values)
-      ).json();
+      const productsResponse: Product[] = await (await apiService.setProduct(values)).json();
       if (productsResponse) {
         const parsed = mapProduct(values, brands, categories);
         setTableData((prev) => [...prev, parsed]);
@@ -119,33 +107,27 @@ export default function InventarioPage() {
   };
 
   const columns = useMemo<MRT_ColumnDef<Product>[]>(
-    () =>
-      productColumns(
-        brands,
-        categories,
-        getCommonEditTextFieldProps,
-        addItemsToInventary,
-      ),
+    () => productColumns(brands, categories, getCommonEditTextFieldProps, addItemsToInventary),
     [getCommonEditTextFieldProps, brands, categories],
   );
 
-  const fetchListProducts = useCallback(async (
-    brandList: Brand[] = brands,
-    categoryList: Category[] = categories,
-  ) => {
-    try {
-      setIsLoading(true);
-      const products = await (await apiService.getAllProducts()).json();
-      const productsParsed = products.map((element: Product) =>
-        mapProduct(element, brandList, categoryList),
-      );
-      setTableData(productsParsed);
-    } catch (e) {
-      console.log("Error al obtener la lista de productos =>", { e });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiService, brands, categories]);
+  const fetchListProducts = useCallback(
+    async (brandList: Brand[] = brands, categoryList: Category[] = categories) => {
+      try {
+        setIsLoading(true);
+        const products = await (await apiService.getAllProducts()).json();
+        const productsParsed = products.map((element: Product) =>
+          mapProduct(element, brandList, categoryList),
+        );
+        setTableData(productsParsed);
+      } catch (e) {
+        console.log("Error al obtener la lista de productos =>", { e });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [apiService, brands, categories],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -195,9 +177,7 @@ export default function InventarioPage() {
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
               Inventario
             </Typography>
-            <Typography color="text.secondary">
-              Gestiona productos y existencias.
-            </Typography>
+            <Typography color="text.secondary">Gestiona productos y existencias.</Typography>
           </Box>
           <CustomTable
             columns={columns}
@@ -208,25 +188,23 @@ export default function InventarioPage() {
             handleDeleteRow={handleDeleteRow}
             setCreateModalOpen={setCreateModalOpen}
           />
-          {
-            createModalOpen &&
-              <NewProductModal
-                columns={columns}
-                open={createModalOpen}
-                onClose={() => setCreateModalOpen(false)}
-                onSubmit={handleCreateNewRow}
-              />
-          }
+          {createModalOpen && (
+            <NewProductModal
+              columns={columns}
+              open={createModalOpen}
+              onClose={() => setCreateModalOpen(false)}
+              onSubmit={handleCreateNewRow}
+            />
+          )}
 
-          {
-            addAmountModalOpen &&
-              <NewProductAmount
-                idProduct={idProductSelected}
-                open={addAmountModalOpen}
-                onClose={() => setAddAmountModalOpen(false)}
-                onSubmit={fetchListProducts}
-              />
-          }
+          {addAmountModalOpen && (
+            <NewProductAmount
+              idProduct={idProductSelected}
+              open={addAmountModalOpen}
+              onClose={() => setAddAmountModalOpen(false)}
+              onSubmit={fetchListProducts}
+            />
+          )}
         </Stack>
       </Container>
     </Box>

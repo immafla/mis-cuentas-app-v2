@@ -31,9 +31,7 @@ const Dashboard = () => {
   const kpis = useMemo(() => {
     const totalSales = recentSales.reduce((sum, sale) => sum + sale.total, 0);
     const totalItems = recentSales.reduce((sum, sale) => sum + sale.items, 0);
-    const avgTicket = recentSales.length
-      ? Math.round(totalSales / recentSales.length)
-      : 0;
+    const avgTicket = recentSales.length ? Math.round(totalSales / recentSales.length) : 0;
 
     return {
       totalSales,
@@ -71,9 +69,7 @@ const Dashboard = () => {
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
               Dashboard de ventas
             </Typography>
-            <Typography color="text.secondary">
-              Resumen rápido del desempeño del día.
-            </Typography>
+            <Typography color="text.secondary">Resumen rápido del desempeño del día.</Typography>
           </Box>
 
           <Grid container spacing={3}>
@@ -101,9 +97,7 @@ const Dashboard = () => {
                   <Typography variant="h4" sx={{ fontWeight: 700 }}>
                     {kpis.totalItems}
                   </Typography>
-                  <Typography color="text.secondary">
-                    Total de unidades
-                  </Typography>
+                  <Typography color="text.secondary">Total de unidades</Typography>
                 </Stack>
               </Paper>
             </Grid>
@@ -116,9 +110,7 @@ const Dashboard = () => {
                   <Typography variant="h4" sx={{ fontWeight: 700 }}>
                     {`$ ${kpis.avgTicket}`}
                   </Typography>
-                  <Typography color="text.secondary">
-                    Promedio por venta
-                  </Typography>
+                  <Typography color="text.secondary">Promedio por venta</Typography>
                 </Stack>
               </Paper>
             </Grid>
@@ -128,20 +120,11 @@ const Dashboard = () => {
             <Grid size={{ xs: 12, md: 8 }}>
               <Paper elevation={0} sx={glassCardSx}>
                 <Stack spacing={2}>
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
-                  >
+                  <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
                       Ventas recientes
                     </Typography>
-                    <Chip
-                      label="Hoy"
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
+                    <Chip label="Hoy" size="small" color="primary" variant="outlined" />
                   </Stack>
                   <Divider />
                   <List disablePadding>
@@ -152,9 +135,7 @@ const Dashboard = () => {
                             primary={sale.customer}
                             secondary={`#${sale.id} · ${sale.items} items`}
                           />
-                          <Typography sx={{ fontWeight: 600 }}>
-                            {`$ ${sale.total}`}
-                          </Typography>
+                          <Typography sx={{ fontWeight: 600 }}>{`$ ${sale.total}`}</Typography>
                         </ListItem>
                         {index < recentSales.length - 1 && <Divider />}
                       </Box>

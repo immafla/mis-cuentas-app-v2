@@ -11,10 +11,7 @@ type AppShellProps = {
 const AppShell = ({ children }: AppShellProps) => {
   const router = useRouter();
   const pathname = usePathname();
-  const navigate = useCallback(
-    (path: string) => () => router.push(path),
-    [router],
-  );
+  const navigate = useCallback((path: string) => () => router.push(path), [router]);
 
   if (pathname === "/login") {
     return <>{children}</>;

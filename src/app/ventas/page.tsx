@@ -90,11 +90,7 @@ const NewSale = () => {
               }}
             >
               <Stack spacing={2}>
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                >
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
                   <Typography variant="h6" component="div">
                     Listado de productos
                   </Typography>
@@ -116,16 +112,10 @@ const NewSale = () => {
                   clearOnBlur={false}
                   value={null}
                   inputValue={productSearchInput}
-                  onInputChange={(_, newInputValue) =>
-                    setProductSearchInput(newInputValue)
-                  }
-                  onChange={(_, selectedOption) =>
-                    handleSelectSearchedProduct(selectedOption)
-                  }
+                  onInputChange={(_, newInputValue) => setProductSearchInput(newInputValue)}
+                  onChange={(_, selectedOption) => handleSelectSearchedProduct(selectedOption)}
                   filterOptions={(options) => options}
-                  isOptionEqualToValue={(option, value) =>
-                    option._id === value._id
-                  }
+                  isOptionEqualToValue={(option, value) => option._id === value._id}
                   getOptionLabel={(option) => option.name}
                   noOptionsText={
                     productSearchInput.trim().length < 2
@@ -210,9 +200,7 @@ const NewSale = () => {
                             <Typography variant="body2" color="text.secondary">
                               {`Cod.: ${element.barCode}`}
                             </Typography>
-                            <Typography
-                              sx={{ fontSize: "14px", fontWeight: 500 }}
-                            >
+                            <Typography sx={{ fontSize: "14px", fontWeight: 500 }}>
                               {`Cantidad: ${element.quantity}`}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
@@ -252,10 +240,7 @@ const NewSale = () => {
                             type="number"
                             value={element.quantity}
                             onChange={(event) =>
-                              handleSetProductQuantity(
-                                element.id,
-                                Number(event.target.value),
-                              )
+                              handleSetProductQuantity(element.id, Number(event.target.value))
                             }
                             inputProps={{
                               min: 1,
@@ -279,9 +264,7 @@ const NewSale = () => {
                             size="small"
                             variant="outlined"
                             color="primary"
-                            onClick={() =>
-                              handleIncreaseProductQuantity(element.id)
-                            }
+                            onClick={() => handleIncreaseProductQuantity(element.id)}
                             disabled={element.quantity >= (element.amount ?? 0)}
                             sx={{
                               minWidth: { xs: 28, sm: 36 },
@@ -318,11 +301,7 @@ const NewSale = () => {
                   <Typography variant="subtitle2" color="text.secondary">
                     Total
                   </Typography>
-                  <Typography
-                    variant="h5"
-                    component="div"
-                    sx={{ fontWeight: 700 }}
-                  >
+                  <Typography variant="h5" component="div" sx={{ fontWeight: 700 }}>
                     {`$ ${total}`}
                   </Typography>
                 </Box>

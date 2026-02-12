@@ -4,9 +4,7 @@
 import { Box, MenuItem } from "@mui/material";
 import Chip from "@mui/material/Chip";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import {
-    MRT_ColumnDef,
-  } from 'material-react-table';
+import { MRT_ColumnDef } from "material-react-table";
 
 export const productColumns = (
   brands: any[],
@@ -29,7 +27,7 @@ export const productColumns = (
       header: "Marca",
       size: 40,
       muiEditTextFieldProps: ({ cell }: { cell: any }) => {
-        console.log({cell})
+        console.log({ cell });
         return {
           variant: "outlined",
           select: true, //change to select for a dropdown
@@ -38,7 +36,7 @@ export const productColumns = (
               {brand.name}
             </MenuItem>
           )),
-        }
+        };
       },
     },
     {
@@ -123,19 +121,11 @@ export const productColumns = (
   ];
 };
 
-const AmountCell = ({
-  value,
-  onAddItems,
-}: {
-  value: number;
-  onAddItems: (data: any) => void;
-}) => (
+const AmountCell = ({ value, onAddItems }: { value: number; onAddItems: (data: any) => void }) => (
   <Chip
     icon={<AddCircleIcon />}
     sx={{ minWidth: "4rem", cursor: "pointer" }}
-    color={
-      value < 10 ? "error" : value >= 10 && value < 20 ? "warning" : "success"
-    }
+    color={value < 10 ? "error" : value >= 10 && value < 20 ? "warning" : "success"}
     label={value}
     onClick={() => onAddItems({ value })}
   />

@@ -5,12 +5,7 @@ import { Box, Container, Stack, Typography } from "@mui/material";
 
 import { validateRequired } from "../../utils";
 import { brandColumns } from "./columns";
-import {
-  MaterialReactTableProps,
-  MRT_Cell,
-  MRT_ColumnDef,
-  MRT_Row,
-} from "material-react-table";
+import { MaterialReactTableProps, MRT_Cell, MRT_ColumnDef, MRT_Row } from "material-react-table";
 import CustomTable from "@/components/Table";
 import { NewBrandModal } from "./components/new-brand";
 
@@ -30,31 +25,29 @@ const NewBrand = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [tableData, setTableData] = useState<BrandRow[]>([]);
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const handleSaveRowEdits: MaterialReactTableProps<any>["onEditingRowSave"] =
-    async ({ exitEditingMode, row, values }) => {
-      if (Object.keys(validationErrors).length) {
-        return;
-      }
+  const handleSaveRowEdits: MaterialReactTableProps<any>["onEditingRowSave"] = async ({
+    exitEditingMode,
+    row,
+    values,
+  }) => {
+    if (Object.keys(validationErrors).length) {
+      return;
+    }
 
-      const result = await updateBrandById(
-        String(row.original._id ?? ""),
-        values.name,
+    const result = await updateBrandById(String(row.original._id ?? ""), values.name);
+
+    if (result.success && result.data) {
+      setTableData((prev) =>
+        prev.map((item, index) =>
+          index === row.index ? { ...item, name: result.data.name } : item,
+        ),
       );
+    }
 
-      if (result.success && result.data) {
-        setTableData((prev) =>
-          prev.map((item, index) =>
-            index === row.index ? { ...item, name: result.data.name } : item,
-          ),
-        );
-      }
-
-      exitEditingMode();
-    };
+    exitEditingMode();
+  };
 
   const handleDeleteRow = useCallback(async (row: MRT_Row<BrandRow>) => {
     if (!confirm(`Seguro quiere borrar la marca ${row.getValue("name")}`)) {
@@ -158,9 +151,7 @@ const NewBrand = () => {
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
               Marcas
             </Typography>
-            <Typography color="text.secondary">
-              Gestiona las marcas.
-            </Typography>
+            <Typography color="text.secondary">Gestiona las marcas.</Typography>
           </Box>
           <CustomTable
             columns={columns}

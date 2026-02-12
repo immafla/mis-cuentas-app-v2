@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import {
-  getProductByBarcode,
-} from "../../../services/products.service";
+import { getProductByBarcode } from "../../../services/products.service";
 
 type SaleLineItem = {
   id: string;
@@ -28,9 +26,7 @@ export const useSales = () => {
     useState<SaleLineItem[]>(initialSaleProducts);
   const [isPaying, setIsPaying] = useState(false);
   const [productSearchInput, setProductSearchInput] = useState("");
-  const [productSearchOptions, setProductSearchOptions] = useState<
-    ProductSearchOption[]
-  >([]);
+  const [productSearchOptions, setProductSearchOptions] = useState<ProductSearchOption[]>([]);
   const [isSearchingProducts, setIsSearchingProducts] = useState(false);
   const [stockWarning, setStockWarning] = useState<string | null>(null);
 
@@ -150,19 +146,12 @@ export const useSales = () => {
 
   const total = useMemo(
     () =>
-      listSelectedProducts.reduce(
-        (sum, item) => sum + (item.price ?? 0) * (item.quantity ?? 1),
-        0,
-      ),
+      listSelectedProducts.reduce((sum, item) => sum + (item.price ?? 0) * (item.quantity ?? 1), 0),
     [listSelectedProducts],
   );
 
   const totalItems = useMemo(
-    () =>
-      listSelectedProducts.reduce(
-        (sum, item) => sum + (item.quantity ?? 1),
-        0,
-      ),
+    () => listSelectedProducts.reduce((sum, item) => sum + (item.quantity ?? 1), 0),
     [listSelectedProducts],
   );
 
@@ -217,39 +206,34 @@ export const useSales = () => {
     );
   }, []);
 
-  const handleSetProductQuantity = useCallback(
-    (id: string, quantity: number) => {
-      setListSelectedProducts((prevState) =>
-        prevState.map((item) => {
-          if (item.id !== id) {
-            return item;
-          }
+  const handleSetProductQuantity = useCallback((id: string, quantity: number) => {
+    setListSelectedProducts((prevState) =>
+      prevState.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
 
-          const normalizedQuantity = Math.max(1, Math.floor(quantity || 1));
-          const maxAllowed = Math.max(item.amount ?? 0, 1);
+        const normalizedQuantity = Math.max(1, Math.floor(quantity || 1));
+        const maxAllowed = Math.max(item.amount ?? 0, 1);
 
-          if (normalizedQuantity > maxAllowed) {
-            setStockWarning(`Llegaste al stock máximo de ${item.name}`);
-          }
+        if (normalizedQuantity > maxAllowed) {
+          setStockWarning(`Llegaste al stock máximo de ${item.name}`);
+        }
 
-          return {
-            ...item,
-            quantity: Math.min(normalizedQuantity, maxAllowed),
-          };
-        }),
-      );
-    },
-    [],
-  );
+        return {
+          ...item,
+          quantity: Math.min(normalizedQuantity, maxAllowed),
+        };
+      }),
+    );
+  }, []);
 
   const clearStockWarning = useCallback(() => {
     setStockWarning(null);
   }, []);
 
   const handleRemoveAllProduct = useCallback((id: string) => {
-    setListSelectedProducts((prevState) =>
-      prevState.filter((item) => item.id !== id),
-    );
+    setListSelectedProducts((prevState) => prevState.filter((item) => item.id !== id));
   }, []);
 
   const handlePay = useCallback(async () => {

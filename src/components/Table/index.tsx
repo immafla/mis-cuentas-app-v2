@@ -1,19 +1,14 @@
 import React from "react";
 import {
-    MaterialReactTable,
-    // MaterialReactTableProps,
-    // MRT_Cell,
-    // MRT_ColumnDef,
-    // MRT_Row,
-  } from 'material-react-table';
-import { Delete, Edit, AddCircle } from '@mui/icons-material';
-import { MRT_Localization_ES } from 'material-react-table/locales/es';
-import {
-    Button,
-    Box,
-    Tooltip,
-    IconButton,
-} from '@mui/material'
+  MaterialReactTable,
+  // MaterialReactTableProps,
+  // MRT_Cell,
+  // MRT_ColumnDef,
+  // MRT_Row,
+} from "material-react-table";
+import { Delete, Edit, AddCircle } from "@mui/icons-material";
+import { MRT_Localization_ES } from "material-react-table/locales/es";
+import { Button, Box, Tooltip, IconButton, useTheme, useMediaQuery } from "@mui/material";
 
 const Table = ({
   columns,
@@ -23,7 +18,7 @@ const Table = ({
   handleCancelRowEdits,
   handleDeleteRow,
   setCreateModalOpen,
-}:{
+}: {
   columns: any;
   tableData: any;
   isLoading: boolean;
@@ -32,19 +27,23 @@ const Table = ({
   handleDeleteRow: any;
   setCreateModalOpen: any;
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const ToolbarActions = () => (
     <Button
       color="primary"
       onClick={() => setCreateModalOpen(true)}
       variant="contained"
+      fullWidth={isMobile}
+      sx={{ minWidth: isMobile ? "100%" : "auto" }}
     >
       <Box
         sx={{
           display: "flex",
           flexDirection: "row",
-          alignItems: "left",
-          justifyContent: "left",
+          alignItems: "center",
+          justifyContent: "center",
           gap: "0.5rem",
         }}
       >
@@ -52,10 +51,10 @@ const Table = ({
         Nuevo
       </Box>
     </Button>
-  )
+  );
 
   const RowActions = ({ row, table }: { row: any; table: any }) => (
-    <Box sx={{ display: "flex", gap: "1rem" }}>
+    <Box sx={{ display: "flex", gap: isMobile ? "0.25rem" : "1rem" }}>
       <Tooltip arrow placement="left" title="Editr">
         <IconButton onClick={() => table.setEditingRow(row)}>
           <Edit />
@@ -67,7 +66,7 @@ const Table = ({
         </IconButton>
       </Tooltip>
     </Box>
-  )
+  );
 
   return (
     <MaterialReactTable
@@ -85,6 +84,18 @@ const Table = ({
       columns={columns}
       data={tableData}
       state={{ isLoading }}
+      muiTableContainerProps={{
+        sx: {
+          maxWidth: "100%",
+          overflowX: "auto",
+        },
+      }}
+      muiTopToolbarProps={{
+        sx: {
+          px: isMobile ? 1 : 2,
+          py: isMobile ? 1 : 1.5,
+        },
+      }}
       muiCircularProgressProps={{
         color: "secondary",
         thickness: 5,
@@ -108,12 +119,13 @@ const Table = ({
       }}
       muiSearchTextFieldProps={{
         placeholder: "Buscar productos",
-        sx: { minWidth: "400px" },
+        sx: {
+          minWidth: isMobile ? "100%" : "260px",
+          width: isMobile ? "100%" : "auto",
+        },
         variant: "outlined",
       }}
-      renderRowActions={({ row, table }) => (
-        <RowActions row={row} table={table} />
-      )}
+      renderRowActions={({ row, table }) => <RowActions row={row} table={table} />}
       renderTopToolbarCustomActions={() => <ToolbarActions />}
     />
   );

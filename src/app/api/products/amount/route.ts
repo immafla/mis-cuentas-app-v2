@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Product from "@/lib/models/Product";
 import { updateProductsAmountBatch } from "@/services/products.service";
@@ -17,12 +17,12 @@ export async function PUT(request: NextRequest) {
     const productoActualizado = await Product.findByIdAndUpdate(
       body.id,
       { $set: { amount: body.amount } },
-      { new: true }
+      { new: true },
     );
 
     return NextResponse.json(productoActualizado, { status: 201 });
   } catch (error) {
-    console.error('Error creating product:', error);
-    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+    console.error("Error creating product:", error);
+    return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
   }
 }

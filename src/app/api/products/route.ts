@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Product from "@/lib/models/Product";
 
@@ -9,9 +9,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q")?.trim() ?? "";
     const limitParam = Number(searchParams.get("limit") ?? "10");
-    const limit = Number.isFinite(limitParam)
-      ? Math.min(Math.max(limitParam, 1), 50)
-      : 10;
+    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 50) : 10;
 
     const filters = query
       ? {
@@ -22,15 +20,12 @@ export async function GET(request: NextRequest) {
         }
       : {};
 
-    const products = await Product.find(filters)
-      .sort({ name: 1 })
-      .limit(limit)
-      .lean();
+    const products = await Product.find(filters).sort({ name: 1 }).limit(limit).lean();
 
     return NextResponse.json(products);
   } catch (error) {
-    console.error('Error fetching products:', error);
-    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    console.error("Error fetching products:", error);
+    return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
   }
 }
 
@@ -43,8 +38,8 @@ export async function POST(request: NextRequest) {
     await newProduct.save();
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
-    console.error('Error creating product:', error);
-    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+    console.error("Error creating product:", error);
+    return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
   }
 }
 
@@ -52,10 +47,10 @@ export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
-    const deletedProduct = await Product.findByIdAndDelete(body.id);        
+    const deletedProduct = await Product.findByIdAndDelete(body.id);
     return NextResponse.json(deletedProduct, { status: 200 });
   } catch (error) {
-    console.error('Error deleting product:', error);
-    return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
+    console.error("Error deleting product:", error);
+    return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
 }

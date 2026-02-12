@@ -16,6 +16,8 @@ import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LightModeIcon from "@mui/icons-material/LightMode";
 import Paper from "@mui/material/Paper";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -27,6 +29,7 @@ import NoteAltSharpIcon from "@mui/icons-material/NoteAltSharp";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import HomeFilledIcon from "@mui/icons-material/HomeFilled";
 import { signOut, useSession } from "next-auth/react";
+import { useColorMode } from "../ThemeRegistry";
 
 const drawerWidth = 240;
 
@@ -125,6 +128,7 @@ export const MiniDrawer = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { mode, toggleColorMode } = useColorMode();
   const [open, setOpen] = React.useState(true);
 
   const mainItems = React.useMemo<DrawerItem[]>(
@@ -173,6 +177,14 @@ export const MiniDrawer = ({
       minHeight: 48,
       justifyContent: open ? "initial" : "center",
       px: 2.5,
+      borderRadius: 1,
+      mx: 1,
+      "&.Mui-selected": {
+        bgcolor: "action.selected",
+      },
+      "&.Mui-selected:hover": {
+        bgcolor: "action.selected",
+      },
     }),
     [open],
   );
@@ -187,24 +199,15 @@ export const MiniDrawer = ({
   );
 
   const isActive = React.useCallback(
-    (path: string) =>
-      path === "/" ? pathname === "/" : pathname?.startsWith(path),
+    (path: string) => (path === "/" ? pathname === "/" : pathname?.startsWith(path)),
     [pathname],
   );
 
   const renderItems = React.useCallback(
     (items: DrawerItem[]) =>
       items.map((item) => (
-        <ListItem
-          key={item.label}
-          disablePadding
-          sx={{ display: "block" }}
-          onClick={item.action}
-        >
-          <ListItemButton
-            sx={listItemButtonSx}
-            selected={Boolean(isActive(item.path))}
-          >
+        <ListItem key={item.label} disablePadding sx={{ display: "block" }} onClick={item.action}>
+          <ListItemButton sx={listItemButtonSx} selected={Boolean(isActive(item.path))}>
             <ListItemIcon sx={listItemIconSx}>{item.icon}</ListItemIcon>
             <ListItemText primary={item.label} sx={{ opacity: open ? 1 : 0 }} />
           </ListItemButton>
@@ -224,7 +227,15 @@ export const MiniDrawer = ({
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <AppBar position="fixed" open={!isMobile && open}>
+      <AppBar
+        position="fixed"
+        open={!isMobile && open}
+        sx={{
+          bgcolor: mode === "dark" ? "grey.900" : "primary.main",
+          color: mode === "dark" ? "grey.100" : "common.white",
+          boxShadow: mode === "dark" ? 6 : 3,
+        }}
+      >
         <Toolbar>
           {!isMobile && (
             <IconButton
@@ -244,6 +255,9 @@ export const MiniDrawer = ({
             Y a beber!
           </Typography>
           <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 2 }}>
+            <IconButton color="inherit" aria-label="Cambiar modo de tema" onClick={toggleColorMode}>
+              {mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
             <Typography variant="body2" noWrap>
               {session?.user?.name ?? session?.user?.email ?? "Usuario"}
             </Typography>
@@ -252,7 +266,9 @@ export const MiniDrawer = ({
               variant="outlined"
               size="small"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              sx={{ borderColor: "rgba(255,255,255,0.4)" }}
+              sx={{
+                borderColor: mode === "dark" ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.55)",
+              }}
             >
               Cerrar sesión
             </Button>
@@ -261,20 +277,26 @@ export const MiniDrawer = ({
       </AppBar>
 
       {!isMobile && (
-        <Drawer variant="permanent" open={open}>
+        <Drawer
+          variant="permanent"
+          open={open}
+          sx={{
+            "& .MuiDrawer-paper": {
+              bgcolor: mode === "dark" ? "grey.950" : "background.paper",
+              color: "text.primary",
+              borderRightColor: "divider",
+            },
+          }}
+        >
           <DrawerHeader>
             <IconButton onClick={handleDrawerClose}>
-              {theme.direction === "rtl" ? (
-                <ChevronRightIcon />
-              ) : (
-                <ChevronLeftIcon />
-              )}
+              {theme.direction === "rtl" ? <ChevronRightIcon /> : <ChevronLeftIcon />}
             </IconButton>
           </DrawerHeader>
 
-          <Divider />
+          <Divider sx={{ borderColor: "divider" }} />
           <List>{renderItems(mainItems)}</List>
-          <Divider />
+          <Divider sx={{ borderColor: "divider" }} />
           <List>{renderItems(secondaryItems)}</List>
         </Drawer>
       )}
@@ -306,6 +328,8 @@ export const MiniDrawer = ({
             right: 0,
             zIndex: theme.zIndex.appBar,
             borderTop: `1px solid ${theme.palette.divider}`,
+            bgcolor: mode === "dark" ? "grey.950" : "background.paper",
+            color: "text.primary",
           }}
         >
           <BottomNavigation
@@ -317,13 +341,18 @@ export const MiniDrawer = ({
                 item.action();
               }
             }}
+            sx={{
+              bgcolor: "transparent",
+              "& .MuiBottomNavigationAction-root": {
+                color: "text.secondary",
+              },
+              "& .MuiBottomNavigationAction-root.Mui-selected": {
+                color: "primary.main",
+              },
+            }}
           >
             {mobileItems.map((item) => (
-              <BottomNavigationAction
-                key={item.label}
-                label={item.label}
-                icon={item.icon}
-              />
+              <BottomNavigationAction key={item.label} label={item.label} icon={item.icon} />
             ))}
           </BottomNavigation>
         </Paper>

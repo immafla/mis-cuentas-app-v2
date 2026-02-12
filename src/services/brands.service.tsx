@@ -10,7 +10,7 @@ export async function createBrand(name: string) {
     const newBrand = new Brand({ name });
     newBrand.name = newBrand.name.toUpperCase();
     await newBrand.save();
-    
+
     return {
       success: true,
       message: "Brand created successfully",
@@ -29,7 +29,7 @@ export async function createBrand(name: string) {
 export async function deleteBrandById(id: string) {
   try {
     await connectDB();
-    console.log({id})
+    console.log({ id });
     const deletedBrand = await Brand.findByIdAndDelete(id).lean();
 
     if (!deletedBrand) {
@@ -69,7 +69,7 @@ export async function updateBrandById(id: string, name: string) {
     const updatedBrand = await Brand.findByIdAndUpdate(
       id,
       { name: normalizedName },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).lean();
 
     if (!updatedBrand) {
@@ -114,7 +114,3 @@ export async function getAllBrands() {
     };
   }
 }
-
-
-
-
