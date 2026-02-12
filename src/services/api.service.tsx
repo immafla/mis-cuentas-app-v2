@@ -9,6 +9,13 @@ export class ApiService {
         })   
     } 
 
+    async updateProductsAmountBatch(updates: Array<{ id: string; amount: number }>) {
+        return await fetch(`/api/products/amount`, {
+            method: 'PUT',
+            body: JSON.stringify({ updates })
+        })
+    }
+
     async getAllCategories(){
         return await fetch('/api/categories', {
             method: 'GET',
@@ -22,6 +29,7 @@ export class ApiService {
     } 
 
     async getAllBrands(){
+        console.log("Fetching brands...");
         return await fetch('/api/brands', {
             method: 'GET',
         })   
@@ -30,13 +38,6 @@ export class ApiService {
     async getAllBussinesCategory(){
         return await fetch('/api/businessCategories', {
             method: 'GET',
-        })   
-    } 
-
-    async getProductByBarcode(barCode:string){
-        return fetch(`/api/products/${barCode}`, {
-            method: 'GET',
-            redirect: 'follow',
         })   
     } 
 

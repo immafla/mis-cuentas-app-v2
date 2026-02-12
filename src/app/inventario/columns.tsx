@@ -28,14 +28,17 @@ export const productColumns = (
       accessorKey: "brand",
       header: "Marca",
       size: 40,
-      muiEditTextFieldProps: {
-        variant: "outlined",
-        select: true, //change to select for a dropdown
-        children: brands.map((brand) => (
-          <MenuItem key={brand._id} value={brand.name}>
-            {brand.name}
-          </MenuItem>
-        )),
+      muiEditTextFieldProps: ({ cell }: { cell: any }) => {
+        console.log({cell})
+        return {
+          variant: "outlined",
+          select: true, //change to select for a dropdown
+          children: brands.map((brand) => (
+            <MenuItem key={brand._id} value={brand.name}>
+              {brand.name}
+            </MenuItem>
+          )),
+        }
       },
     },
     {

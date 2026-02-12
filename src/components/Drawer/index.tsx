@@ -1,4 +1,5 @@
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { styled, useTheme, Theme, CSSObject } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import MuiDrawer from "@mui/material/Drawer";
@@ -19,6 +20,7 @@ import ListItemText from "@mui/material/ListItemText";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import NoteAltSharpIcon from "@mui/icons-material/NoteAltSharp";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
+import HomeFilledIcon from "@mui/icons-material/HomeFilled";
 
 const drawerWidth = 240;
 
@@ -91,21 +93,120 @@ const Drawer = styled(MuiDrawer, {
   }),
 }));
 
+type MiniDrawerProps = {
+  showDashboard: () => void;
+  showProduct: () => void;
+  showSale: () => void;
+  showAddBrand: () => void;
+  children?: React.ReactNode;
+};
+
+type DrawerItem = {
+  label: string;
+  icon: React.ReactNode;
+  action: () => void;
+  path: string;
+};
+
 export const MiniDrawer = ({
+  showDashboard,
   showProduct,
   showSale,
   showAddBrand,
-}: any) => {
+  children,
+}: MiniDrawerProps) => {
   const theme = useTheme();
+  const pathname = usePathname();
   const [open, setOpen] = React.useState(true);
 
-  const handleDrawerOpen = () => {
-    setOpen(true);
-  };
+  const mainItems = React.useMemo<DrawerItem[]>(
+    () => [
+      {
+        label: "Inicio",
+        icon: <HomeFilledIcon />,
+        action: showDashboard,
+        path: "/",
+      },
+      {
+        label: "Ventas",
+        icon: <PointOfSaleIcon />,
+        action: showSale,
+        path: "/ventas",
+      },
+    ],
+    [showDashboard, showSale],
+  );
 
-  const handleDrawerClose = () => {
+  const secondaryItems = React.useMemo<DrawerItem[]>(
+    () => [
+      {
+        label: "Inventario",
+        icon: <NoteAltSharpIcon />,
+        action: showProduct,
+        path: "/inventario",
+      },
+      {
+        label: "Nueva marca",
+        icon: <AssignmentIcon />,
+        action: showAddBrand,
+        path: "/marcas",
+      },
+    ],
+    [showAddBrand, showProduct],
+  );
+
+  const listItemButtonSx = React.useMemo(
+    () => ({
+      minHeight: 48,
+      justifyContent: open ? "initial" : "center",
+      px: 2.5,
+    }),
+    [open],
+  );
+
+  const listItemIconSx = React.useMemo(
+    () => ({
+      minWidth: 0,
+      mr: open ? 3 : "auto",
+      justifyContent: "center",
+    }),
+    [open],
+  );
+
+  const isActive = React.useCallback(
+    (path: string) =>
+      path === "/" ? pathname === "/" : pathname?.startsWith(path),
+    [pathname],
+  );
+
+  const renderItems = React.useCallback(
+    (items: DrawerItem[]) =>
+      items.map((item) => (
+        <ListItem
+          key={item.label}
+          disablePadding
+          sx={{ display: "block" }}
+          onClick={item.action}
+        >
+          <ListItemButton
+            sx={listItemButtonSx}
+            selected={Boolean(isActive(item.path))}
+          >
+            <ListItemIcon sx={listItemIconSx}>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.label} sx={{ opacity: open ? 1 : 0 }} />
+          </ListItemButton>
+        </ListItem>
+      )),
+    [isActive, listItemButtonSx, listItemIconSx, open],
+  );
+
+  const handleDrawerOpen = React.useCallback(() => {
+    setOpen(true);
+  }, []);
+
+  const handleDrawerClose = React.useCallback(() => {
     setOpen(false);
-  };
+  }, []);
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -140,103 +241,27 @@ export const MiniDrawer = ({
             )}
           </IconButton>
         </DrawerHeader>
-        
+
         <Divider />
-        <List>
-          {[
-            {
-              label: "Ventas",
-              icon: <PointOfSaleIcon />,
-              action: () => showSale(),
-            },
-            {
-              label: "Inventario",
-              icon: <NoteAltSharpIcon />,
-              action: () => showProduct(),
-            },
-          ].map((element, index) => (
-            <ListItem
-              key={element.label}
-              disablePadding
-              sx={{ display: "block" }}
-              onClick={element.action}
-            >
-              <ListItemButton
-                sx={{
-                  minHeight: 48,
-                  justifyContent: open ? "initial" : "center",
-                  px: 2.5,
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: open ? 3 : "auto",
-                    justifyContent: "center",
-                  }}
-                >
-                  {element.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={element.label}
-                  sx={{ opacity: open ? 1 : 0 }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
+        <List>{renderItems(mainItems)}</List>
         <Divider />
-        <List>
-          {[
-            {
-              label: "Nueva marca",
-              icon: <AssignmentIcon />,
-              action: () => showAddBrand(),
-            },
-          ].map((element, index) => (
-            <ListItem
-              key={element.label}
-              disablePadding
-              sx={{ display: "block" }}
-              onClick={element.action}
-            >
-              <ListItemButton
-                sx={{
-                  minHeight: 48,
-                  justifyContent: open ? "initial" : "center",
-                  px: 2.5,
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: open ? 3 : "auto",
-                    justifyContent: "center",
-                  }}
-                >
-                  {element.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={element.label}
-                  sx={{ opacity: open ? 1 : 0 }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
+        <List>{renderItems(secondaryItems)}</List>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: -3, width: "100%" }}>
-        <img
-          src="bg_home.jpg"
-          alt=""
-          style={{
-            width: "100%",
-            marginTop: "64px",
-            maxWidth: "100%",
-            height: "auto",
-          }}
-        />
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: "100%",
+          p: 3,
+          transition: theme.transitions.create(["margin"], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.standard,
+          }),
+        }}
+      >
+        <DrawerHeader />
+        {children}
       </Box>
     </Box>
   );

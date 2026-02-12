@@ -1,5 +1,5 @@
 import React , { FC, useState, useEffect, SetStateAction } from 'react'
-import { Modal } from '../../../Modal/index'
+import { Modal } from '../../../../components/Modal/index'
 import { MRT_ColumnDef } from 'material-react-table';
 import styles from './styles.module.css';
 import {

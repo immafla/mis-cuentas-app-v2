@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import React, { FC } from "react";
-import { Modal } from "../../../Modal/index";
+import { Modal } from "../../../../components/Modal/index";
 import NumberField from "@/components/NumberField";
 import { ApiService } from '../../../../services/api.service'
 

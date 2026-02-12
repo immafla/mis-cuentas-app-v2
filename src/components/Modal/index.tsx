@@ -1,4 +1,4 @@
-import React, { useEffect, useState, FC, JSX } from 'react';
+import React, { FC, JSX } from 'react';
 import {
     Button,
     DialogActions,
@@ -7,7 +7,7 @@ import {
 	Stack,
 } from '@mui/material'
 
-import Dialog, { DialogProps } from '@mui/material/Dialog';
+import Dialog from '@mui/material/Dialog';
 
 export const Modal: FC<{
 	title: string;

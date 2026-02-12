@@ -1,5 +1,5 @@
 import React , { FC, useState } from 'react'
-import { Modal } from '../../../Modal/index'
+import { Modal } from '../../../../components/Modal'
 import { MRT_ColumnDef } from 'material-react-table';
 import { TextField } from '@mui/material'
 
