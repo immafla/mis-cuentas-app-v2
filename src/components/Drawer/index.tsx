@@ -1,10 +1,13 @@
 import * as React from "react";
 import { usePathname } from "next/navigation";
 import { styled, useTheme, Theme, CSSObject } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import Box from "@mui/material/Box";
 import MuiDrawer from "@mui/material/Drawer";
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
+import BottomNavigation from "@mui/material/BottomNavigation";
+import BottomNavigationAction from "@mui/material/BottomNavigationAction";
 import List from "@mui/material/List";
 import CssBaseline from "@mui/material/CssBaseline";
 import Typography from "@mui/material/Typography";
@@ -13,6 +16,7 @@ import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import Paper from "@mui/material/Paper";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -118,6 +122,7 @@ export const MiniDrawer = ({
   children,
 }: MiniDrawerProps) => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const pathname = usePathname();
   const { data: session } = useSession();
   const [open, setOpen] = React.useState(true);
@@ -156,6 +161,11 @@ export const MiniDrawer = ({
       },
     ],
     [showAddBrand, showProduct],
+  );
+
+  const mobileItems = React.useMemo(
+    () => [...mainItems, ...secondaryItems],
+    [mainItems, secondaryItems],
   );
 
   const listItemButtonSx = React.useMemo(
@@ -214,20 +224,22 @@ export const MiniDrawer = ({
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <AppBar position="fixed" open={open}>
+      <AppBar position="fixed" open={!isMobile && open}>
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            edge="start"
-            sx={{
-              marginRight: 5,
-              ...(open && { display: "none" }),
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
+          {!isMobile && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              onClick={handleDrawerOpen}
+              edge="start"
+              sx={{
+                marginRight: 5,
+                ...(open && { display: "none" }),
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <Typography variant="h6" noWrap component="div">
             Y a beber!
           </Typography>
@@ -248,22 +260,24 @@ export const MiniDrawer = ({
         </Toolbar>
       </AppBar>
 
-      <Drawer variant="permanent" open={open}>
-        <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
-            {theme.direction === "rtl" ? (
-              <ChevronRightIcon />
-            ) : (
-              <ChevronLeftIcon />
-            )}
-          </IconButton>
-        </DrawerHeader>
+      {!isMobile && (
+        <Drawer variant="permanent" open={open}>
+          <DrawerHeader>
+            <IconButton onClick={handleDrawerClose}>
+              {theme.direction === "rtl" ? (
+                <ChevronRightIcon />
+              ) : (
+                <ChevronLeftIcon />
+              )}
+            </IconButton>
+          </DrawerHeader>
 
-        <Divider />
-        <List>{renderItems(mainItems)}</List>
-        <Divider />
-        <List>{renderItems(secondaryItems)}</List>
-      </Drawer>
+          <Divider />
+          <List>{renderItems(mainItems)}</List>
+          <Divider />
+          <List>{renderItems(secondaryItems)}</List>
+        </Drawer>
+      )}
 
       <Box
         component="main"
@@ -271,15 +285,49 @@ export const MiniDrawer = ({
           flexGrow: 1,
           width: "100%",
           p: 3,
+          pb: isMobile ? 10 : 3,
           transition: theme.transitions.create(["margin"], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.standard,
           }),
         }}
       >
-        <DrawerHeader />
+        <Toolbar />
         {children}
       </Box>
+
+      {isMobile && (
+        <Paper
+          elevation={8}
+          sx={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: theme.zIndex.appBar,
+            borderTop: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <BottomNavigation
+            showLabels
+            value={mobileItems.findIndex((item) => isActive(item.path))}
+            onChange={(_, index: number) => {
+              const item = mobileItems[index];
+              if (item) {
+                item.action();
+              }
+            }}
+          >
+            {mobileItems.map((item) => (
+              <BottomNavigationAction
+                key={item.label}
+                label={item.label}
+                icon={item.icon}
+              />
+            ))}
+          </BottomNavigation>
+        </Paper>
+      )}
     </Box>
   );
 };

@@ -180,8 +180,15 @@ const NewSale = () => {
                 )}
                 {groupedSelectedProducts.map((element) => (
                   <Box key={`${element.id}-${element.barCode}`}>
-                    <ListItem sx={{ py: 1.5 }}>
-                      <ListItemAvatar>
+                    <ListItem
+                      sx={{
+                        py: 1.5,
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        flexWrap: { xs: "wrap", sm: "nowrap" },
+                        rowGap: 1,
+                      }}
+                    >
+                      <ListItemAvatar sx={{ minWidth: { xs: 44, sm: 56 } }}>
                         <Avatar
                           sx={{
                             bgcolor: "primary.light",
@@ -193,6 +200,11 @@ const NewSale = () => {
                       </ListItemAvatar>
                       <ListItemText
                         primary={element.name}
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          mr: { xs: 0, sm: 2 },
+                        }}
                         secondary={
                           <>
                             <Typography variant="body2" color="text.secondary">
@@ -210,16 +222,28 @@ const NewSale = () => {
                         }
                         primaryTypographyProps={{ fontWeight: 600 }}
                       />
-                      <Stack alignItems="flex-end" spacing={1}>
-                        <Typography variant="h6" component="div">
+                      <Stack
+                        spacing={1}
+                        sx={{
+                          width: { xs: "100%", sm: "auto" },
+                          alignItems: { xs: "flex-start", sm: "flex-end" },
+                          ml: { xs: 5.5, sm: 0 },
+                        }}
+                      >
+                        <Typography variant="h6" component="div" sx={{ lineHeight: 1.2 }}>
                           {`$ ${element.price * element.quantity}`}
                         </Typography>
-                        <Stack direction="row" spacing={1}>
+                        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
                           <Button
                             size="small"
                             variant="outlined"
                             color="error"
                             onClick={() => handleRemoveOneProduct(element.id)}
+                            sx={{
+                              minWidth: { xs: 28, sm: 36 },
+                              px: { xs: 0.5, sm: 1 },
+                              height: { xs: 28, sm: 32 },
+                            }}
                           >
                             -
                           </Button>
@@ -237,9 +261,17 @@ const NewSale = () => {
                               min: 1,
                               max: element.amount,
                               style: {
-                                width: 52,
+                                width: 44,
                                 textAlign: "center",
-                                padding: "6px 8px",
+                                padding: "4px 6px",
+                              },
+                            }}
+                            sx={{
+                              "& .MuiInputBase-root": {
+                                height: { xs: 28, sm: 32 },
+                              },
+                              "& .MuiInputBase-input": {
+                                fontSize: { xs: "0.8rem", sm: "0.875rem" },
                               },
                             }}
                           />
@@ -251,6 +283,11 @@ const NewSale = () => {
                               handleIncreaseProductQuantity(element.id)
                             }
                             disabled={element.quantity >= (element.amount ?? 0)}
+                            sx={{
+                              minWidth: { xs: 28, sm: 36 },
+                              px: { xs: 0.5, sm: 1 },
+                              height: { xs: 28, sm: 32 },
+                            }}
                           >
                             +
                           </Button>
