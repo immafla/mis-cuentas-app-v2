@@ -9,6 +9,8 @@ export async function middleware(req: NextRequest) {
     pathname === "/login" ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/_next") ||
+    pathname === "/sw.js" ||
+    pathname.startsWith("/workbox-") ||
     pathname === "/favicon.ico" ||
     pathname === "/manifest.webmanifest" ||
     pathname.startsWith("/icons");
