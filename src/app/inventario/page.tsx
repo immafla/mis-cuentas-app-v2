@@ -59,7 +59,7 @@ export default function InventarioPage() {
   const [tableData, setTableData] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
   const [addAmountModalOpen, setAddAmountModalOpen] = useState(false);
   const [idProductSelected, setIdProductSelected] = useState<string>("");
@@ -208,18 +208,25 @@ export default function InventarioPage() {
             handleDeleteRow={handleDeleteRow}
             setCreateModalOpen={setCreateModalOpen}
           />
-          <NewProductModal
-            columns={columns}
-            open={createModalOpen}
-            onClose={() => setCreateModalOpen(false)}
-            onSubmit={handleCreateNewRow}
-          />
-          <NewProductAmount
-            idProduct={idProductSelected}
-            open={addAmountModalOpen}
-            onClose={() => setAddAmountModalOpen(false)}
-            onSubmit={fetchListProducts}
-          />
+          {
+            createModalOpen &&
+              <NewProductModal
+                columns={columns}
+                open={createModalOpen}
+                onClose={() => setCreateModalOpen(false)}
+                onSubmit={handleCreateNewRow}
+              />
+          }
+
+          {
+            addAmountModalOpen &&
+              <NewProductAmount
+                idProduct={idProductSelected}
+                open={addAmountModalOpen}
+                onClose={() => setAddAmountModalOpen(false)}
+                onSubmit={fetchListProducts}
+              />
+          }
         </Stack>
       </Container>
     </Box>
