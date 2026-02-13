@@ -8,6 +8,8 @@ import { brandColumns } from "./columns";
 import { MaterialReactTableProps, MRT_Cell, MRT_ColumnDef, MRT_Row } from "material-react-table";
 import CustomTable from "@/components/Table";
 import { NewBrandModal } from "./components/new-brand";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 import {
   createBrand,
@@ -15,6 +17,8 @@ import {
   updateBrandById,
   getAllBrands,
 } from "@/services/brands.service";
+
+const MySwal = withReactContent(Swal);
 
 type BrandRow = {
   _id?: string;
@@ -27,12 +31,17 @@ const NewBrand = () => {
   const [tableData, setTableData] = useState<BrandRow[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const handleSaveRowEdits: MaterialReactTableProps<any>["onEditingRowSave"] = async ({
+  const handleSaveRowEdits: MaterialReactTableProps<BrandRow>["onEditingRowSave"] = async ({
     exitEditingMode,
     row,
     values,
   }) => {
     if (Object.keys(validationErrors).length) {
+      await MySwal.fire({
+        icon: "warning",
+        title: "Campos inválidos",
+        text: "Revisa los campos antes de guardar.",
+      });
       return;
     }
 
@@ -44,20 +53,74 @@ const NewBrand = () => {
           index === row.index ? { ...item, name: result.data.name } : item,
         ),
       );
+      exitEditingMode();
+      await new Promise((resolve) => setTimeout(resolve, 180));
+      await MySwal.fire({
+        icon: "success",
+        title: "Marca actualizada",
+        text: "Los cambios se guardaron correctamente.",
+        timer: 1600,
+        showConfirmButton: false,
+      });
+      return;
     }
 
-    exitEditingMode();
+    await MySwal.fire({
+      icon: "error",
+      title: "Error al actualizar",
+      text: result.message ?? result.error ?? "No fue posible actualizar la marca.",
+    });
   };
 
   const handleDeleteRow = useCallback(async (row: MRT_Row<BrandRow>) => {
-    if (!confirm(`Seguro quiere borrar la marca ${row.getValue("name")}`)) {
+    const confirmDelete = await MySwal.fire({
+      icon: "warning",
+      title: "¿Eliminar marca?",
+      text: `Se eliminará la marca ${row.getValue("name")}. Esta acción no se puede deshacer.`,
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#d33",
+    });
+
+    if (!confirmDelete.isConfirmed) {
       return;
     }
-    console.log("Deleting row with id:", row.getValue("_id"));
-    const result = await deleteBrandById(String(row.original._id ?? ""));
+
+    const rawBrandId = row.original._id;
+    const brandId =
+      typeof rawBrandId === "string"
+        ? rawBrandId
+        : ((rawBrandId as { toString?: () => string })?.toString?.() ?? "");
+
+    if (!brandId || brandId === "[object Object]") {
+      await MySwal.fire({
+        icon: "error",
+        title: "Error al eliminar",
+        text: "No se encontró un id válido para la marca. Recarga la tabla e intenta de nuevo.",
+      });
+      return;
+    }
+
+    const result = await deleteBrandById(brandId);
+
     if (result.success) {
       setTableData((prev) => prev.filter((_, index) => index !== row.index));
+      await MySwal.fire({
+        icon: "success",
+        title: "Marca eliminada",
+        text: "La marca se eliminó correctamente.",
+        timer: 1600,
+        showConfirmButton: false,
+      });
+      return;
     }
+
+    await MySwal.fire({
+      icon: "error",
+      title: "Error al eliminar",
+      text: result.message ?? result.error ?? "No fue posible eliminar la marca.",
+    });
   }, []);
 
   const handleCancelRowEdits = () => {
@@ -94,19 +157,45 @@ const NewBrand = () => {
 
   const handleCreateNewRow = async (values: BrandRow) => {
     if (!values.name) {
-      alert("El nombre es obligatorio");
+      await MySwal.fire({
+        icon: "warning",
+        title: "Campo obligatorio",
+        text: "El nombre de la marca es obligatorio.",
+      });
       return;
     }
 
-    setIsLoading(true);
-    const result = await createBrand(values.name);
+    try {
+      setIsLoading(true);
+      const result = await createBrand(values.name);
 
-    if (result.success && result.data) {
-      setTableData((prev) => [...prev, result.data]);
-      setCreateModalOpen(false);
+      if (result.success && result.data) {
+        setTableData((prev) => [...prev, result.data]);
+        setCreateModalOpen(false);
+        await MySwal.fire({
+          icon: "success",
+          title: "Marca creada",
+          text: "La marca se guardó correctamente.",
+          timer: 1600,
+          showConfirmButton: false,
+        });
+        return;
+      }
+
+      await MySwal.fire({
+        icon: "error",
+        title: "Error al crear",
+        text: result.message ?? result.error ?? "No fue posible crear la marca.",
+      });
+    } catch (error) {
+      await MySwal.fire({
+        icon: "error",
+        title: "Error al crear",
+        text: error instanceof Error ? error.message : "No fue posible crear la marca.",
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const columns = useMemo<MRT_ColumnDef<BrandRow>[]>(

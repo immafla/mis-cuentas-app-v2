@@ -4,6 +4,11 @@ import connectDB from "@/lib/mongodb";
 import Brand from "@/lib/models/Brand";
 import { Types } from "mongoose";
 
+const normalizeBrand = (brand: { _id: unknown; name: string }) => ({
+  _id: String(brand._id),
+  name: brand.name,
+});
+
 export async function createBrand(name: string) {
   try {
     await connectDB();
@@ -14,7 +19,7 @@ export async function createBrand(name: string) {
     return {
       success: true,
       message: "Brand created successfully",
-      data: structuredClone(newBrand.toObject()),
+      data: normalizeBrand(newBrand.toObject()),
     };
   } catch (error) {
     console.error("Error creating brand:", error);
@@ -43,7 +48,7 @@ export async function deleteBrandById(id: string) {
     return {
       success: true,
       message: "Brand deleted successfully",
-      data: structuredClone(deletedBrand),
+      data: normalizeBrand(deletedBrand as { _id: unknown; name: string }),
     };
   } catch (error) {
     console.error("Error deleting brand:", error);
@@ -83,7 +88,7 @@ export async function updateBrandById(id: string, name: string) {
     return {
       success: true,
       message: "Brand updated successfully",
-      data: structuredClone(updatedBrand),
+      data: normalizeBrand(updatedBrand as { _id: unknown; name: string }),
     };
   } catch (error) {
     console.error("Error updating brand:", error);
@@ -103,7 +108,7 @@ export async function getAllBrands() {
     return {
       success: true,
       message: "Brands fetched successfully",
-      data: structuredClone(brands),
+      data: brands.map((brand) => normalizeBrand(brand as { _id: unknown; name: string })),
     };
   } catch (error) {
     console.error("Error fetching brands:", error);

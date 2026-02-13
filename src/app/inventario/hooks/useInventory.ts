@@ -202,31 +202,33 @@ export const useInventory = () => {
     async (values: Product) => {
       try {
         setIsLoading(true);
-        const productResponse: ProductWithId = await (await apiService.setProduct(values)).json();
-        if (productResponse) {
-          const parsed = mapProduct(productResponse, brands, categories);
-          setTableData((prev) => [...prev, parsed]);
-          setCreateModalOpen(false);
-          await MySwal.fire({
-            icon: "success",
-            title: "Producto creado",
-            text: "El nuevo producto se guardó correctamente.",
-            timer: 1600,
-            showConfirmButton: false,
-          });
+        const response = await apiService.setProduct(values);
+
+        if (!response.ok) {
+          throw new Error("No fue posible crear el producto.");
         }
+
+        await fetchListProductsCurrent();
+        setCreateModalOpen(false);
+        await MySwal.fire({
+          icon: "success",
+          title: "Producto creado",
+          text: "El nuevo producto se guardó correctamente.",
+          timer: 1600,
+          showConfirmButton: false,
+        });
       } catch (error) {
         await MySwal.fire({
           icon: "error",
           title: "Error al crear",
-          text: "No fue posible crear el producto.",
+          text: error instanceof Error ? error.message : "No fue posible crear el producto.",
         });
         console.log("Error al guardar el producto =>", { error });
       } finally {
         setIsLoading(false);
       }
     },
-    [apiService, brands, categories],
+    [apiService, fetchListProductsCurrent],
   );
 
   const columns = useMemo<MRT_ColumnDef<ProductWithId>[]>(
