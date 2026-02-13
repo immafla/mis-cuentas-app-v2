@@ -54,15 +54,19 @@ const Table = ({
   );
 
   const RowActions = ({ row, table }: { row: any; table: any }) => (
-    <Box sx={{ display: "flex", gap: isMobile ? "0.25rem" : "1rem" }}>
-      <Tooltip arrow placement="left" title="Editr">
-        <IconButton onClick={() => table.setEditingRow(row)}>
-          <Edit />
+    <Box sx={{ display: "flex", gap: isMobile ? "0.25rem" : "0.75rem" }}>
+      <Tooltip arrow placement="left" title="Editar">
+        <IconButton size={isMobile ? "small" : "medium"} onClick={() => table.setEditingRow(row)}>
+          <Edit fontSize={isMobile ? "small" : "medium"} />
         </IconButton>
       </Tooltip>
-      <Tooltip arrow placement="right" title="Delete">
-        <IconButton color="error" onClick={() => handleDeleteRow(row)}>
-          <Delete />
+      <Tooltip arrow placement="right" title="Eliminar">
+        <IconButton
+          size={isMobile ? "small" : "medium"}
+          color="error"
+          onClick={() => handleDeleteRow(row)}
+        >
+          <Delete fontSize={isMobile ? "small" : "medium"} />
         </IconButton>
       </Tooltip>
     </Box>
@@ -78,12 +82,18 @@ const Table = ({
       enableRowOrdering={false}
       enableColumnFilters={false}
       enableSorting={false}
-      initialState={{ density: "compact" }}
+      initialState={{ density: "compact", showGlobalFilter: true }}
       editDisplayMode="modal"
       localization={MRT_Localization_ES}
       columns={columns}
       data={tableData}
       state={{ isLoading }}
+      muiTablePaperProps={{
+        sx: {
+          width: "100%",
+          overflow: "hidden",
+        },
+      }}
       muiTableContainerProps={{
         sx: {
           maxWidth: "100%",
@@ -94,6 +104,8 @@ const Table = ({
         sx: {
           px: isMobile ? 1 : 2,
           py: isMobile ? 1 : 1.5,
+          gap: isMobile ? 1 : 1.5,
+          flexWrap: "wrap",
         },
       }}
       muiCircularProgressProps={{
@@ -123,10 +135,15 @@ const Table = ({
           minWidth: isMobile ? "100%" : "260px",
           width: isMobile ? "100%" : "auto",
         },
+        size: isMobile ? "small" : "medium",
         variant: "outlined",
       }}
       renderRowActions={({ row, table }) => <RowActions row={row} table={table} />}
-      renderTopToolbarCustomActions={() => <ToolbarActions />}
+      renderTopToolbarCustomActions={() => (
+        <Box sx={{ width: isMobile ? "100%" : "auto" }}>
+          <ToolbarActions />
+        </Box>
+      )}
     />
   );
 };
