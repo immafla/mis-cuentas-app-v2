@@ -29,6 +29,7 @@ const Table = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const ToolbarActions = () => (
     <Button
@@ -87,7 +88,7 @@ const Table = ({
       localization={MRT_Localization_ES}
       columns={columns}
       data={tableData}
-      state={{ isLoading }}
+      state={{ isLoading, isSaving }}
       muiTablePaperProps={{
         sx: {
           width: "100%",
@@ -118,7 +119,14 @@ const Table = ({
         height: 28,
       }}
       enableEditing
-      onEditingRowSave={handleSaveRowEdits}
+      onEditingRowSave={async (props) => {
+        setIsSaving(true);
+        try {
+          await handleSaveRowEdits(props);
+        } finally {
+          setIsSaving(false);
+        }
+      }}
       onEditingRowCancel={handleCancelRowEdits}
       displayColumnDefOptions={{
         "mrt-row-actions": {

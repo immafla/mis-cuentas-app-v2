@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q")?.trim() ?? "";
-    const limitParam = Number(searchParams.get("limit") ?? "10");
+    const limitParam = Number(searchParams.get("limit") ?? "100");
     const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 50) : 10;
 
     const filters = query

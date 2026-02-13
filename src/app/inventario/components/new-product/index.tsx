@@ -12,12 +12,10 @@ import {
   InputAdornment,
   OutlinedInput,
 } from "@mui/material";
-// import { Product } from '../../../pages/product/interface';
 import { ApiService } from "../../../../services/api.service";
-import { Product } from "@/interfaces";
 
 export const NewProductModal: FC<{
-  columns: MRT_ColumnDef<Product>[];
+  columns: MRT_ColumnDef<any>[];
   onClose: () => void;
   onSubmit: (values: any) => void;
   open: boolean;

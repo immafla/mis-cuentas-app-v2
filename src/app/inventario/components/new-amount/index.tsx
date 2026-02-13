@@ -6,17 +6,17 @@ import NumberField from "@/components/NumberField";
 import { ApiService } from "../../../../services/api.service";
 
 export const NewProductAmount: FC<{
-  idProduct: string;
+  product: any;
   onClose: () => void;
   onSubmit: () => void;
   open: boolean;
-}> = ({ idProduct, open, onClose, onSubmit }) => {
-  const [amount, setAmount] = React.useState<number | null>();
+}> = ({ product, open, onClose, onSubmit }) => {
+  const [amount, setAmount] = React.useState<number | null>(product?.amount ?? null);
 
   const apiService = new ApiService();
 
   const onSubmitModal = async () => {
-    await apiService.updateProductsAmount(idProduct, amount as number);
+    await apiService.updateProductsAmount(product._id, amount as number);
     onSubmit();
   };
 
@@ -25,6 +25,7 @@ export const NewProductAmount: FC<{
       <NumberField
         label="Ingrese la cantidad"
         size="medium"
+        value={amount}
         onValueChange={(value) => setAmount(value)}
       />
     </Modal>
