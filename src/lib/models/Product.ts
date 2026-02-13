@@ -5,7 +5,6 @@ export interface IProduct extends Document {
   brand: string;
   amount: number;
   category: string;
-  purchase_price: number;
   sale_price: string;
   bar_code: string;
 }
@@ -16,7 +15,6 @@ const ProductSchema = new Schema<IProduct>(
     brand: { type: String, required: true },
     amount: { type: Number, required: true },
     category: { type: String, required: true },
-    purchase_price: { type: Number, required: true },
     sale_price: { type: String, required: true },
     bar_code: { type: String, required: true },
   },

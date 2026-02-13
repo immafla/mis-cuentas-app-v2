@@ -5,22 +5,17 @@ import { Box, Container, Stack, Typography } from "@mui/material";
 import CustomTable from "@/components/Table";
 
 import { NewProductModal } from "./components/new-product";
-import NewProductAmount from "@/app/inventario/components/new-amount";
 import { useInventory } from "./hooks/useInventory";
 
 export default function InventarioPage() {
   const {
-    addAmountModalOpen,
     columns,
     createModalOpen,
     handleCancelRowEdits,
     handleCreateNewRow,
     handleDeleteRow,
     handleSaveRowEdits,
-    productSelected,
     isLoading,
-    refreshProducts,
-    setAddAmountModalOpen,
     setCreateModalOpen,
     tableData,
   } = useInventory();
@@ -59,15 +54,6 @@ export default function InventarioPage() {
               onClose={() => setCreateModalOpen(false)}
               onSubmit={handleCreateNewRow}
               existingProductNames={tableData.map((product) => product.name)}
-            />
-          )}
-
-          {addAmountModalOpen && (
-            <NewProductAmount
-              product={productSelected}
-              open={addAmountModalOpen}
-              onClose={() => setAddAmountModalOpen(false)}
-              onSubmit={refreshProducts}
             />
           )}
         </Stack>

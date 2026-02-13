@@ -4,15 +4,12 @@ import connectDB from "@/lib/mongodb";
 import Product, { IProduct } from "@/lib/models/Product";
 
 type ProductUpdate = Partial<
-  Pick<
-    IProduct,
-    "name" | "brand" | "amount" | "category" | "purchase_price" | "sale_price" | "bar_code"
-  >
+  Pick<IProduct, "name" | "brand" | "amount" | "category" | "sale_price" | "bar_code">
 >;
 
 type ProductCreateInput = Pick<
   IProduct,
-  "name" | "brand" | "amount" | "category" | "purchase_price" | "sale_price" | "bar_code"
+  "name" | "brand" | "amount" | "category" | "sale_price" | "bar_code"
 >;
 
 const parseNumericInput = (value: unknown) => {
@@ -41,7 +38,6 @@ export async function createProduct(input: ProductCreateInput) {
     const normalizedBrand = String(input?.brand ?? "").trim();
     const normalizedCategory = String(input?.category ?? "").trim();
     const normalizedSalePrice = parseNumericInput(input?.sale_price);
-    const normalizedPurchasePrice = parseNumericInput(input?.purchase_price);
 
     const hasRequiredFields =
       normalizedName.length > 0 &&
@@ -54,14 +50,6 @@ export async function createProduct(input: ProductCreateInput) {
         success: false,
         error: "Missing required fields",
         message: "Campos obligatorios incompletos",
-      };
-    }
-
-    if (!Number.isFinite(normalizedPurchasePrice) || normalizedPurchasePrice < 0) {
-      return {
-        success: false,
-        error: "Invalid purchase price",
-        message: "El precio de compra es inválido.",
       };
     }
 
@@ -89,7 +77,6 @@ export async function createProduct(input: ProductCreateInput) {
       category: normalizedCategory,
       bar_code: normalizedBarCode,
       sale_price: String(normalizedSalePrice),
-      purchase_price: normalizedPurchasePrice,
       amount: Number(input?.amount ?? 0),
     });
 
@@ -115,9 +102,6 @@ export async function updateProductById(id: string, update: ProductUpdate) {
     const updateData: ProductUpdate = { ...update };
     if (typeof updateData.name === "string") {
       updateData.name = updateData.name.toUpperCase();
-    }
-    if (updateData.purchase_price !== undefined) {
-      updateData.purchase_price = Number(updateData.purchase_price ?? 0);
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {

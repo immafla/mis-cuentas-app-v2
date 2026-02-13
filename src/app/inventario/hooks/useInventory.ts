@@ -16,7 +16,6 @@ export type Product = {
   name: string;
   brand: string;
   category: string;
-  purchase_price: number;
   sale_price: number;
   amount: number;
 };
@@ -39,7 +38,6 @@ const mapProduct = (product: ProductWithId, brands: Brand[], categories: Categor
 
   return {
     ...product,
-    purchase_price: Number(product.purchase_price ?? 0),
     sale_price: Number(product.sale_price ?? 0),
     brand: brandName ?? product.brand,
     category: categoryName ?? product.category,
@@ -54,8 +52,6 @@ export const useInventory = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [addAmountModalOpen, setAddAmountModalOpen] = useState(false);
-  const [productSelected, setProductSelected] = useState<ProductWithId>();
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const fetchListProducts = useCallback(
@@ -112,7 +108,6 @@ export const useInventory = () => {
           name: String(values.name ?? ""),
           brand: brandId ?? String(values.brand ?? ""),
           category: categoryId ?? String(values.category ?? ""),
-          purchase_price: Number(values.purchase_price ?? 0),
           sale_price: String(values.sale_price ?? 0),
           bar_code: String(values.bar_code ?? ""),
         };
@@ -141,11 +136,6 @@ export const useInventory = () => {
       },
       [brands, categories, fetchListProductsCurrent, validationErrors],
     );
-
-  const addItemsToInventary = useCallback((data: ProductWithId) => {
-    setAddAmountModalOpen(true);
-    setProductSelected(data);
-  }, []);
 
   const handleCancelRowEdits = useCallback(() => {
     setValidationErrors({});
@@ -211,7 +201,6 @@ export const useInventory = () => {
         const hasRequiredFields =
           normalizedName.length > 0 &&
           String(values.bar_code ?? "").trim().length > 0 &&
-          String(values.purchase_price ?? "").trim().length > 0 &&
           String(values.sale_price ?? "").trim().length > 0 &&
           String(values.brand ?? "").trim().length > 0 &&
           String(values.category ?? "").trim().length > 0;
@@ -246,7 +235,6 @@ export const useInventory = () => {
         const result = await createProduct({
           ...values,
           name: normalizedName,
-          purchase_price: Number(values.purchase_price ?? 0),
           sale_price: String(Number(values.sale_price ?? 0)),
         });
 
@@ -274,12 +262,12 @@ export const useInventory = () => {
         setIsLoading(false);
       }
     },
-    [apiService, fetchListProductsCurrent, tableData],
+    [fetchListProductsCurrent, tableData],
   );
 
   const columns = useMemo<MRT_ColumnDef<ProductWithId>[]>(
-    () => productColumns(brands, categories, getCommonEditTextFieldProps, addItemsToInventary),
-    [addItemsToInventary, brands, categories, getCommonEditTextFieldProps],
+    () => productColumns(brands, categories, getCommonEditTextFieldProps),
+    [brands, categories, getCommonEditTextFieldProps],
   );
 
   useEffect(() => {
@@ -316,16 +304,13 @@ export const useInventory = () => {
   }, [apiService, fetchListProducts]);
 
   return {
-    addAmountModalOpen,
     columns,
     createModalOpen,
     handleCancelRowEdits,
     handleCreateNewRow,
     handleDeleteRow,
     handleSaveRowEdits,
-    productSelected,
     isLoading,
-    setAddAmountModalOpen,
     setCreateModalOpen,
     tableData,
     refreshProducts: fetchListProductsCurrent,

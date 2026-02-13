@@ -2,7 +2,6 @@
 
 import connectDB from "@/lib/mongodb";
 import Sale from "@/lib/models/Sale";
-import Product from "@/lib/models/Product";
 import { Types } from "mongoose";
 
 type SaleInputItem = {
@@ -86,27 +85,10 @@ export async function createSaleRecord(items: SaleInputItem[]) {
       };
     }
 
-    const productIds = items
-      .map((item) => item.id)
-      .filter((id) => Types.ObjectId.isValid(id))
-      .map((id) => new Types.ObjectId(id));
-
-    const products = await Product.find({ _id: { $in: productIds } })
-      .select({ _id: 1, purchase_price: 1 })
-      .lean();
-
-    const purchaseByProductId = new Map<string, number>(
-      products.map((product) => [String(product._id), Number(product.purchase_price ?? 0)]),
-    );
-
     const normalizedItems = items.map((item) => {
       const quantity = Math.max(1, Number(item.quantity ?? 1));
       const unitPrice = Number(item.price ?? 0);
-      const purchaseFromProduct = purchaseByProductId.get(String(item.id));
-      const unitCost = Number(
-        purchaseFromProduct ??
-          (Number.isFinite(Number(item.purchasePrice)) ? item.purchasePrice : 0),
-      );
+      const unitCost = Number(Number.isFinite(Number(item.purchasePrice)) ? item.purchasePrice : 0);
       const lineTotal = quantity * unitPrice;
       const lineCost = quantity * unitCost;
       const lineProfit = lineTotal - lineCost;

@@ -17,11 +17,15 @@ export const Modal: FC<{
       return;
     }
 
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     onClose();
   };
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onClose={onClose}>
       <DialogTitle textAlign="center">{title}</DialogTitle>
       <DialogContent>
         <form onSubmit={(e) => e.preventDefault()}>

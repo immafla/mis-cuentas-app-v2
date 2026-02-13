@@ -27,6 +27,18 @@ export class ApiService {
     });
   }
 
+  async searchProducts(query: string, limit = 10, signal?: AbortSignal) {
+    const params = new URLSearchParams({
+      q: query,
+      limit: String(limit),
+    });
+
+    return await fetch(`/api/products?${params.toString()}`, {
+      method: "GET",
+      signal,
+    });
+  }
+
   async getAllBrands() {
     console.log("Fetching brands...");
     return await fetch("/api/brands", {

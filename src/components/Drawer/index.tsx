@@ -29,6 +29,8 @@ import NoteAltSharpIcon from "@mui/icons-material/NoteAltSharp";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import HomeFilledIcon from "@mui/icons-material/HomeFilled";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 import { signOut, useSession } from "next-auth/react";
 import { useColorMode } from "../ThemeRegistry";
 
@@ -106,9 +108,11 @@ const Drawer = styled(MuiDrawer, {
 type MiniDrawerProps = {
   showDashboard: () => void;
   showProduct: () => void;
+  showLots: () => void;
   showSale: () => void;
   showSalesHistory: () => void;
   showAddBrand: () => void;
+  showSuppliers: () => void;
   children?: React.ReactNode;
 };
 
@@ -122,9 +126,11 @@ type DrawerItem = {
 export const MiniDrawer = ({
   showDashboard,
   showProduct,
+  showLots,
   showSale,
   showSalesHistory,
   showAddBrand,
+  showSuppliers,
   children,
 }: MiniDrawerProps) => {
   const theme = useTheme();
@@ -167,13 +173,25 @@ export const MiniDrawer = ({
         path: "/inventario",
       },
       {
+        label: "Lotes",
+        icon: <Inventory2Icon />,
+        action: showLots,
+        path: "/lotes",
+      },
+      {
         label: "Nueva marca",
         icon: <AssignmentIcon />,
         action: showAddBrand,
         path: "/marcas",
       },
+      {
+        label: "Proveedores",
+        icon: <LocalShippingIcon />,
+        action: showSuppliers,
+        path: "/proveedores",
+      },
     ],
-    [showAddBrand, showProduct],
+    [showAddBrand, showLots, showProduct, showSuppliers],
   );
 
   const mobileItems = React.useMemo(

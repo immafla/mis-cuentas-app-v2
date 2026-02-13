@@ -3,14 +3,12 @@
 
 import { Box, MenuItem } from "@mui/material";
 import Chip from "@mui/material/Chip";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { MRT_ColumnDef } from "material-react-table";
 
 export const productColumns = (
   brands: any[],
   categories: any[],
   getCommonEditTextFieldProps: any,
-  addItemsToInventary: (data: any) => void,
 ): MRT_ColumnDef<any>[] => {
   return [
     {
@@ -48,12 +46,7 @@ export const productColumns = (
         variant: "outlined",
         ...getCommonEditTextFieldProps(cell),
       }),
-      Cell: (props: any) => (
-        <AmountCell
-          value={props.cell.getValue() as number}
-          onAddItems={() => addItemsToInventary(props.cell.row.original)}
-        />
-      ),
+      Cell: (props: any) => <AmountCell value={props.cell.getValue() as number} />,
     },
     {
       accessorKey: "category",
@@ -68,26 +61,6 @@ export const productColumns = (
           </MenuItem>
         )),
       },
-    },
-    {
-      accessorKey: "purchase_price",
-      header: "Precio de compra",
-      size: 20,
-      muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
-        variant: "outlined",
-        ...getCommonEditTextFieldProps(cell),
-        type: "number",
-      }),
-      Cell: ({ cell }: { cell: any }) => (
-        <Box>
-          {Number(cell.getValue() ?? 0).toLocaleString("es-CO", {
-            style: "currency",
-            currency: "COP",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })}
-        </Box>
-      ),
     },
     {
       accessorKey: "sale_price",
@@ -121,12 +94,10 @@ export const productColumns = (
   ];
 };
 
-const AmountCell = ({ value, onAddItems }: { value: number; onAddItems: (data: any) => void }) => (
+const AmountCell = ({ value }: { value: number }) => (
   <Chip
-    icon={<AddCircleIcon />}
-    sx={{ minWidth: "4rem", cursor: "pointer" }}
+    sx={{ minWidth: "3rem", fontWeight: 600, width: "20px" }}
     color={value < 10 ? "error" : value >= 10 && value < 20 ? "warning" : "success"}
     label={value}
-    onClick={() => onAddItems({ value })}
   />
 );

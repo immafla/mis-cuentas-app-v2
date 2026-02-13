@@ -17,7 +17,6 @@ export type ProductSearchOption = {
   _id: string;
   name: string;
   sale_price: string;
-  purchase_price: number;
   amount: number;
   bar_code: string;
 };
@@ -63,7 +62,7 @@ export const useSales = () => {
               barCode,
               name: data.name,
               price: Number(data.sale_price),
-              purchasePrice: Number(data.purchase_price ?? 0),
+              purchasePrice: 0,
               amount: data.amount ?? 0,
               quantity: 1,
             },
@@ -111,7 +110,7 @@ export const useSales = () => {
             barCode: product.bar_code,
             name: product.name,
             price: Number(product.sale_price),
-            purchasePrice: Number(product.purchase_price ?? 0),
+            purchasePrice: 0,
             amount: product.amount ?? 0,
             quantity: 1,
           },

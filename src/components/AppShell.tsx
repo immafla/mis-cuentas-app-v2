@@ -21,9 +21,11 @@ const AppShell = ({ children }: AppShellProps) => {
     <MiniDrawer
       showDashboard={navigate("/")}
       showProduct={navigate("/inventario")}
+      showLots={navigate("/lotes")}
       showSale={navigate("/ventas")}
       showSalesHistory={navigate("/historial-ventas")}
       showAddBrand={navigate("/marcas")}
+      showSuppliers={navigate("/proveedores")}
     >
       {children}
     </MiniDrawer>
