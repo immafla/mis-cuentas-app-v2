@@ -39,8 +39,10 @@ const NewSale = () => {
     productSearchOptions,
     isSearchingProducts,
     stockWarning,
+    saleSuccessMessage,
     setProductSearchInput,
     clearStockWarning,
+    clearSaleSuccessMessage,
     handleSelectSearchedProduct,
     handleRemoveOneProduct,
     handleIncreaseProductQuantity,
@@ -328,6 +330,17 @@ const NewSale = () => {
       >
         <Alert onClose={clearStockWarning} severity="warning" variant="filled">
           {stockWarning}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={Boolean(saleSuccessMessage)}
+        autoHideDuration={2200}
+        onClose={clearSaleSuccessMessage}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={clearSaleSuccessMessage} severity="success" variant="filled">
+          {saleSuccessMessage}
         </Alert>
       </Snackbar>
     </Container>

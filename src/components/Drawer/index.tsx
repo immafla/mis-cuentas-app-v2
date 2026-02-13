@@ -28,6 +28,7 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import NoteAltSharpIcon from "@mui/icons-material/NoteAltSharp";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import HomeFilledIcon from "@mui/icons-material/HomeFilled";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { signOut, useSession } from "next-auth/react";
 import { useColorMode } from "../ThemeRegistry";
 
@@ -106,6 +107,7 @@ type MiniDrawerProps = {
   showDashboard: () => void;
   showProduct: () => void;
   showSale: () => void;
+  showSalesHistory: () => void;
   showAddBrand: () => void;
   children?: React.ReactNode;
 };
@@ -121,6 +123,7 @@ export const MiniDrawer = ({
   showDashboard,
   showProduct,
   showSale,
+  showSalesHistory,
   showAddBrand,
   children,
 }: MiniDrawerProps) => {
@@ -145,8 +148,14 @@ export const MiniDrawer = ({
         action: showSale,
         path: "/ventas",
       },
+      {
+        label: "Historial",
+        icon: <ReceiptLongIcon />,
+        action: showSalesHistory,
+        path: "/historial-ventas",
+      },
     ],
-    [showDashboard, showSale],
+    [showDashboard, showSale, showSalesHistory],
   );
 
   const secondaryItems = React.useMemo<DrawerItem[]>(

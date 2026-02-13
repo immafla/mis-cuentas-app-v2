@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getProductByBarcode } from "../../../services/products.service";
+import { createSaleRecord } from "@/services/sales.service";
 
 type SaleLineItem = {
   id: string;
@@ -29,6 +30,7 @@ export const useSales = () => {
   const [productSearchOptions, setProductSearchOptions] = useState<ProductSearchOption[]>([]);
   const [isSearchingProducts, setIsSearchingProducts] = useState(false);
   const [stockWarning, setStockWarning] = useState<string | null>(null);
+  const [saleSuccessMessage, setSaleSuccessMessage] = useState<string | null>(null);
 
   const bufferRef = useRef("");
   const lastKeyTimeRef = useRef(0);
@@ -232,6 +234,10 @@ export const useSales = () => {
     setStockWarning(null);
   }, []);
 
+  const clearSaleSuccessMessage = useCallback(() => {
+    setSaleSuccessMessage(null);
+  }, []);
+
   const handleRemoveAllProduct = useCallback((id: string) => {
     setListSelectedProducts((prevState) => prevState.filter((item) => item.id !== id));
   }, []);
@@ -243,6 +249,14 @@ export const useSales = () => {
 
     setIsPaying(true);
     try {
+      const soldItems = listSelectedProducts.map(({ id, barCode, name, price, quantity }) => ({
+        id,
+        barCode,
+        name,
+        price,
+        quantity,
+      }));
+
       const updates = listSelectedProducts.map(({ id, amount, quantity }) => ({
         id,
         amount: Math.max((amount ?? 0) - quantity, 0),
@@ -269,7 +283,14 @@ export const useSales = () => {
         throw new Error(result?.message ?? "Error actualizando stock");
       }
 
+      const saleResult = await createSaleRecord(soldItems);
+
+      if (!saleResult.success) {
+        throw new Error(saleResult.message ?? "No se pudo registrar la venta");
+      }
+
       setListSelectedProducts([]);
+      setSaleSuccessMessage("Venta registrada correctamente");
     } catch (error) {
       console.error("Error al actualizar el inventario", error);
       setStockWarning("No se pudo procesar la venta. Intenta de nuevo.");
@@ -377,8 +398,10 @@ export const useSales = () => {
     productSearchOptions,
     isSearchingProducts,
     stockWarning,
+    saleSuccessMessage,
     setProductSearchInput,
     clearStockWarning,
+    clearSaleSuccessMessage,
     handleSelectSearchedProduct,
     handleRemoveOneProduct,
     handleIncreaseProductQuantity,

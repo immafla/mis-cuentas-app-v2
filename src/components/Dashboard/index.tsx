@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Chip,
@@ -14,39 +14,72 @@ import {
   Paper,
   Stack,
   Typography,
+  CircularProgress,
 } from "@mui/material";
+import { getDashboardSalesData } from "@/services/sales.service";
+
+type DashboardSale = {
+  id: string;
+  customer: string;
+  total: number;
+  items: number;
+  soldAt: string;
+};
+
+type DashboardKpis = {
+  totalSales: number;
+  totalItems: number;
+  avgTicket: number;
+  salesCount: number;
+  goalProgress: number;
+};
 
 const Dashboard = () => {
-  const recentSales = useMemo(
-    () => [
-      { id: "S-1001", customer: "Cliente mostrador", total: 18500, items: 4 },
-      { id: "S-1002", customer: "María R.", total: 7600, items: 2 },
-      { id: "S-1003", customer: "Carlos M.", total: 12400, items: 3 },
-      { id: "S-1004", customer: "Cliente mostrador", total: 5600, items: 1 },
-      { id: "S-1005", customer: "Ana P.", total: 21400, items: 5 },
-    ],
-    [],
-  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [recentSales, setRecentSales] = useState<DashboardSale[]>([]);
+  const [kpis, setKpis] = useState<DashboardKpis>({
+    totalSales: 0,
+    totalItems: 0,
+    avgTicket: 0,
+    salesCount: 0,
+    goalProgress: 0,
+  });
 
-  const kpis = useMemo(() => {
-    const totalSales = recentSales.reduce((sum, sale) => sum + sale.total, 0);
-    const totalItems = recentSales.reduce((sum, sale) => sum + sale.items, 0);
-    const avgTicket = recentSales.length ? Math.round(totalSales / recentSales.length) : 0;
+  useEffect(() => {
+    let active = true;
 
-    return {
-      totalSales,
-      totalItems,
-      avgTicket,
-      goalProgress: Math.min(Math.round((totalSales / 100000) * 100), 100),
+    (async () => {
+      try {
+        const result = await getDashboardSalesData(8);
+
+        if (!active) {
+          return;
+        }
+
+        if (result.success && result.data) {
+          setRecentSales(result.data.recentSales);
+          setKpis(result.data.kpis);
+        }
+      } catch (error) {
+        console.error("Error loading dashboard sales", error);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
     };
-  }, [recentSales]);
+  }, []);
 
   const glassCardSx = useMemo(
     () => ({
       p: 3,
       borderRadius: 2,
       border: "1px solid rgba(255,255,255,0.45)",
-      backgroundColor: "rgba(255,255,255,0.7)",
+      backgroundColor: "rgba(255, 255, 255, 0.16)",
       backdropFilter: "blur(12px)",
       boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
     }),
@@ -83,7 +116,7 @@ const Dashboard = () => {
                     {`$ ${kpis.totalSales}`}
                   </Typography>
                   <Typography color="text.secondary">
-                    {`${recentSales.length} transacciones`}
+                    {`${kpis.salesCount} transacciones`}
                   </Typography>
                 </Stack>
               </Paper>
@@ -127,20 +160,34 @@ const Dashboard = () => {
                     <Chip label="Hoy" size="small" color="primary" variant="outlined" />
                   </Stack>
                   <Divider />
-                  <List disablePadding>
-                    {recentSales.map((sale, index) => (
-                      <Box key={sale.id}>
+                  {isLoading ? (
+                    <Stack alignItems="center" justifyContent="center" sx={{ py: 4 }}>
+                      <CircularProgress size={28} />
+                    </Stack>
+                  ) : (
+                    <List disablePadding>
+                      {recentSales.length === 0 && (
                         <ListItem sx={{ px: 0 }}>
                           <ListItemText
-                            primary={sale.customer}
-                            secondary={`#${sale.id} · ${sale.items} items`}
+                            primary="Sin ventas registradas"
+                            secondary="Cuando se registren ventas aparecerán aquí"
                           />
-                          <Typography sx={{ fontWeight: 600 }}>{`$ ${sale.total}`}</Typography>
                         </ListItem>
-                        {index < recentSales.length - 1 && <Divider />}
-                      </Box>
-                    ))}
-                  </List>
+                      )}
+                      {recentSales.map((sale, index) => (
+                        <Box key={sale.id}>
+                          <ListItem sx={{ px: 0 }}>
+                            <ListItemText
+                              primary={sale.customer}
+                              secondary={`#${sale.id.slice(-6).toUpperCase()} · ${sale.items} items · ${new Date(sale.soldAt).toLocaleString("es-CO")}`}
+                            />
+                            <Typography sx={{ fontWeight: 600 }}>{`$ ${sale.total}`}</Typography>
+                          </ListItem>
+                          {index < recentSales.length - 1 && <Divider />}
+                        </Box>
+                      ))}
+                    </List>
+                  )}
                 </Stack>
               </Paper>
             </Grid>

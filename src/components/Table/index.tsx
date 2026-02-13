@@ -18,6 +18,11 @@ const Table = ({
   handleCancelRowEdits,
   handleDeleteRow,
   setCreateModalOpen,
+  showCreateButton = true,
+  showEditAction = true,
+  showDeleteAction = true,
+  actionsHeader = "Acciones",
+  searchPlaceholder = "Buscar",
 }: {
   columns: any;
   tableData: any;
@@ -26,6 +31,11 @@ const Table = ({
   handleCancelRowEdits: any;
   handleDeleteRow: any;
   setCreateModalOpen: any;
+  showCreateButton?: boolean;
+  showEditAction?: boolean;
+  showDeleteAction?: boolean;
+  actionsHeader?: string;
+  searchPlaceholder?: string;
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -56,20 +66,24 @@ const Table = ({
 
   const RowActions = ({ row, table }: { row: any; table: any }) => (
     <Box sx={{ display: "flex", gap: isMobile ? "0.25rem" : "0.75rem" }}>
-      <Tooltip arrow placement="left" title="Editar">
-        <IconButton size={isMobile ? "small" : "medium"} onClick={() => table.setEditingRow(row)}>
-          <Edit fontSize={isMobile ? "small" : "medium"} />
-        </IconButton>
-      </Tooltip>
-      <Tooltip arrow placement="right" title="Eliminar">
-        <IconButton
-          size={isMobile ? "small" : "medium"}
-          color="error"
-          onClick={() => handleDeleteRow(row)}
-        >
-          <Delete fontSize={isMobile ? "small" : "medium"} />
-        </IconButton>
-      </Tooltip>
+      {showEditAction && (
+        <Tooltip arrow placement="left" title="Editar">
+          <IconButton size={isMobile ? "small" : "medium"} onClick={() => table.setEditingRow(row)}>
+            <Edit fontSize={isMobile ? "small" : "medium"} />
+          </IconButton>
+        </Tooltip>
+      )}
+      {showDeleteAction && (
+        <Tooltip arrow placement="right" title="Eliminar">
+          <IconButton
+            size={isMobile ? "small" : "medium"}
+            color="error"
+            onClick={() => handleDeleteRow(row)}
+          >
+            <Delete fontSize={isMobile ? "small" : "medium"} />
+          </IconButton>
+        </Tooltip>
+      )}
     </Box>
   );
 
@@ -118,19 +132,24 @@ const Table = ({
         animation: "pulse",
         height: 28,
       }}
-      enableEditing
-      onEditingRowSave={async (props) => {
-        setIsSaving(true);
-        try {
-          await handleSaveRowEdits(props);
-        } finally {
-          setIsSaving(false);
-        }
-      }}
-      onEditingRowCancel={handleCancelRowEdits}
+      enableRowActions={showEditAction || showDeleteAction}
+      enableEditing={showEditAction}
+      onEditingRowSave={
+        showEditAction
+          ? async (props) => {
+              setIsSaving(true);
+              try {
+                await handleSaveRowEdits(props);
+              } finally {
+                setIsSaving(false);
+              }
+            }
+          : undefined
+      }
+      onEditingRowCancel={showEditAction ? handleCancelRowEdits : undefined}
       displayColumnDefOptions={{
         "mrt-row-actions": {
-          header: "Editar producto",
+          header: actionsHeader,
           muiTableHeadCellProps: {
             align: "left",
           },
@@ -138,7 +157,7 @@ const Table = ({
         },
       }}
       muiSearchTextFieldProps={{
-        placeholder: "Buscar productos",
+        placeholder: searchPlaceholder,
         sx: {
           minWidth: isMobile ? "100%" : "260px",
           width: isMobile ? "100%" : "auto",
@@ -146,12 +165,20 @@ const Table = ({
         size: isMobile ? "small" : "medium",
         variant: "outlined",
       }}
-      renderRowActions={({ row, table }) => <RowActions row={row} table={table} />}
-      renderTopToolbarCustomActions={() => (
-        <Box sx={{ width: isMobile ? "100%" : "auto" }}>
-          <ToolbarActions />
-        </Box>
-      )}
+      renderRowActions={
+        showEditAction || showDeleteAction
+          ? ({ row, table }) => <RowActions row={row} table={table} />
+          : undefined
+      }
+      renderTopToolbarCustomActions={
+        showCreateButton
+          ? () => (
+              <Box sx={{ width: isMobile ? "100%" : "auto" }}>
+                <ToolbarActions />
+              </Box>
+            )
+          : undefined
+      }
     />
   );
 };
