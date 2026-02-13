@@ -80,7 +80,7 @@ export const useInventory = () => {
 
   const handleSaveRowEdits: MaterialReactTableProps<ProductWithId>["onEditingRowSave"] =
     useCallback(
-      async ({ exitEditingMode, row, values }) => {
+      async ({ exitEditingMode, row, values }: any) => {
         if (Object.keys(validationErrors).length) {
           await MySwal.fire({
             icon: "warning",
