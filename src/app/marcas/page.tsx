@@ -88,10 +88,7 @@ const NewBrand = () => {
     }
 
     const rawBrandId = row.original._id;
-    const brandId =
-      typeof rawBrandId === "string"
-        ? rawBrandId
-        : ((rawBrandId as { toString?: () => string })?.toString?.() ?? "");
+    const brandId = rawBrandId ? String(rawBrandId) : "";
 
     if (!brandId || brandId === "[object Object]") {
       await MySwal.fire({
