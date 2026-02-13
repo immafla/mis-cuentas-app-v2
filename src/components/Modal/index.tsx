@@ -7,11 +7,16 @@ export const Modal: FC<{
   title: string;
   children: JSX.Element | JSX.Element[];
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit: () => void | boolean | Promise<void | boolean>;
   open: boolean;
 }> = ({ open, onClose, onSubmit, children, title }) => {
-  const handleSubmit = () => {
-    onSubmit();
+  const handleSubmit = async () => {
+    const canClose = await onSubmit();
+
+    if (canClose === false) {
+      return;
+    }
+
     onClose();
   };
 

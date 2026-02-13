@@ -69,29 +69,9 @@ export const productColumns = (
         )),
       },
     },
-    // {
-    //   accessorKey: 'purchase_price',
-    //   header: 'Precio de compra',
-    //   size: 20,
-    //   muiTableBodyCellEditTextFieldProps: ({ cell }) => ({
-    // 		variant:"outlined",
-    //     ...getCommonEditTextFieldProps(cell),
-    //     type: 'number',
-    //   }),
-    // 	Cell: ({ cell }) => (
-    // 		<Box>
-    // 			{cell.getValue<number>()?.toLocaleString?.('es-CO', {
-    // 				style: 'currency',
-    // 				currency: 'COP',
-    // 				minimumFractionDigits: 0,
-    // 				maximumFractionDigits: 0,
-    // 			})}
-    // 		</Box>
-    // 	),
-    // },
     {
-      accessorKey: "sale_price",
-      header: "Precio",
+      accessorKey: "purchase_price",
+      header: "Precio de compra",
       size: 20,
       muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
         variant: "outlined",
@@ -100,7 +80,27 @@ export const productColumns = (
       }),
       Cell: ({ cell }: { cell: any }) => (
         <Box>
-          {(cell.getValue() as number)?.toLocaleString?.("es-CO", {
+          {Number(cell.getValue() ?? 0).toLocaleString("es-CO", {
+            style: "currency",
+            currency: "COP",
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          })}
+        </Box>
+      ),
+    },
+    {
+      accessorKey: "sale_price",
+      header: "Precio de venta",
+      size: 20,
+      muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
+        variant: "outlined",
+        ...getCommonEditTextFieldProps(cell),
+        type: "number",
+      }),
+      Cell: ({ cell }: { cell: any }) => (
+        <Box>
+          {Number(cell.getValue() ?? 0).toLocaleString("es-CO", {
             style: "currency",
             currency: "COP",
             minimumFractionDigits: 0,

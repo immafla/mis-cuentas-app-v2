@@ -6,7 +6,7 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
 import { ApiService } from "@/services/api.service";
-import { updateProductById } from "@/services/products.service";
+import { createProduct, updateProductById } from "@/services/products.service";
 import { productColumns } from "../columns";
 
 const MySwal = withReactContent(Swal);
@@ -39,6 +39,8 @@ const mapProduct = (product: ProductWithId, brands: Brand[], categories: Categor
 
   return {
     ...product,
+    purchase_price: Number(product.purchase_price ?? 0),
+    sale_price: Number(product.sale_price ?? 0),
     brand: brandName ?? product.brand,
     category: categoryName ?? product.category,
   };
@@ -110,7 +112,8 @@ export const useInventory = () => {
           name: String(values.name ?? ""),
           brand: brandId ?? String(values.brand ?? ""),
           category: categoryId ?? String(values.category ?? ""),
-          sale_price: String(values.sale_price ?? "0"),
+          purchase_price: Number(values.purchase_price ?? 0),
+          sale_price: String(values.sale_price ?? 0),
           bar_code: String(values.bar_code ?? ""),
         };
 
@@ -201,11 +204,54 @@ export const useInventory = () => {
   const handleCreateNewRow = useCallback(
     async (values: Product) => {
       try {
-        setIsLoading(true);
-        const response = await apiService.setProduct(values);
+        const normalizedName = String(values.name ?? "")
+          .trim()
+          .replaceAll(/\s+/g, " ")
+          .toUpperCase();
+        const hasRequiredFields =
+          normalizedName.length > 0 &&
+          String(values.bar_code ?? "").trim().length > 0 &&
+          String(values.purchase_price ?? "").trim().length > 0 &&
+          String(values.sale_price ?? "").trim().length > 0 &&
+          String(values.brand ?? "").trim().length > 0 &&
+          String(values.category ?? "").trim().length > 0;
 
-        if (!response.ok) {
-          throw new Error("No fue posible crear el producto.");
+        if (!hasRequiredFields) {
+          await MySwal.fire({
+            icon: "warning",
+            title: "Campos requeridos",
+            text: "Completa todos los campos obligatorios antes de guardar.",
+          });
+          return;
+        }
+
+        const duplicatedName = tableData.some(
+          (product) =>
+            String(product.name ?? "")
+              .trim()
+              .replaceAll(/\s+/g, " ")
+              .toUpperCase() === normalizedName,
+        );
+
+        if (duplicatedName) {
+          await MySwal.fire({
+            icon: "warning",
+            title: "Producto duplicado",
+            text: "Ya existe un producto con ese nombre.",
+          });
+          return;
+        }
+
+        setIsLoading(true);
+        const result = await createProduct({
+          ...values,
+          name: normalizedName,
+          purchase_price: Number(values.purchase_price ?? 0),
+          sale_price: String(Number(values.sale_price ?? 0)),
+        });
+
+        if (!result.success) {
+          throw new Error(result.message ?? result.error ?? "No fue posible crear el producto.");
         }
 
         await fetchListProductsCurrent();
@@ -228,7 +274,7 @@ export const useInventory = () => {
         setIsLoading(false);
       }
     },
-    [apiService, fetchListProductsCurrent],
+    [apiService, fetchListProductsCurrent, tableData],
   );
 
   const columns = useMemo<MRT_ColumnDef<ProductWithId>[]>(

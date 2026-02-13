@@ -62,17 +62,6 @@ export class ApiService {
     });
   }
 
-  async setProduct(body: any) {
-    return fetch("/api/products", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      redirect: "follow",
-      body: JSON.stringify(body),
-    });
-  }
-
   async deleteBrand(body: any) {
     return fetch("/api/brands", {
       method: "DELETE",

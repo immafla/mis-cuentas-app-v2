@@ -4,8 +4,109 @@ import connectDB from "@/lib/mongodb";
 import Product, { IProduct } from "@/lib/models/Product";
 
 type ProductUpdate = Partial<
-  Pick<IProduct, "name" | "brand" | "amount" | "category" | "sale_price" | "bar_code">
+  Pick<
+    IProduct,
+    "name" | "brand" | "amount" | "category" | "purchase_price" | "sale_price" | "bar_code"
+  >
 >;
+
+type ProductCreateInput = Pick<
+  IProduct,
+  "name" | "brand" | "amount" | "category" | "purchase_price" | "sale_price" | "bar_code"
+>;
+
+const parseNumericInput = (value: unknown) => {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return Number.NaN;
+  }
+
+  const raw = String(value).trim();
+  if (!raw) {
+    return Number.NaN;
+  }
+
+  const normalized = raw.replaceAll(/[^\d,.-]/g, "").replaceAll(",", ".");
+  return Number(normalized);
+};
+
+export async function createProduct(input: ProductCreateInput) {
+  try {
+    await connectDB();
+
+    const normalizedName = String(input?.name ?? "")
+      .trim()
+      .replaceAll(/\s+/g, " ")
+      .toUpperCase();
+    const normalizedBarCode = String(input?.bar_code ?? "").trim();
+    const normalizedBrand = String(input?.brand ?? "").trim();
+    const normalizedCategory = String(input?.category ?? "").trim();
+    const normalizedSalePrice = parseNumericInput(input?.sale_price);
+    const normalizedPurchasePrice = parseNumericInput(input?.purchase_price);
+
+    const hasRequiredFields =
+      normalizedName.length > 0 &&
+      normalizedBarCode.length > 0 &&
+      normalizedBrand.length > 0 &&
+      normalizedCategory.length > 0;
+
+    if (!hasRequiredFields) {
+      return {
+        success: false,
+        error: "Missing required fields",
+        message: "Campos obligatorios incompletos",
+      };
+    }
+
+    if (!Number.isFinite(normalizedPurchasePrice) || normalizedPurchasePrice < 0) {
+      return {
+        success: false,
+        error: "Invalid purchase price",
+        message: "El precio de compra es inválido.",
+      };
+    }
+
+    if (!Number.isFinite(normalizedSalePrice) || normalizedSalePrice < 0) {
+      return {
+        success: false,
+        error: "Invalid sale price",
+        message: "El precio de venta es inválido.",
+      };
+    }
+
+    const existingByName = await Product.findOne({ name: normalizedName }).lean();
+    if (existingByName) {
+      return {
+        success: false,
+        error: "Duplicated product name",
+        message: "Ya existe un producto con ese nombre",
+      };
+    }
+
+    const newProduct = await Product.create({
+      ...input,
+      name: normalizedName,
+      brand: normalizedBrand,
+      category: normalizedCategory,
+      bar_code: normalizedBarCode,
+      sale_price: String(normalizedSalePrice),
+      purchase_price: normalizedPurchasePrice,
+      amount: Number(input?.amount ?? 0),
+    });
+
+    return {
+      success: true,
+      message: "Product created successfully",
+      data: structuredClone(newProduct.toObject()),
+    };
+  } catch (error) {
+    console.error("Error creating product:", error);
+    return {
+      success: false,
+      error: "Failed to create product",
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
 
 export async function updateProductById(id: string, update: ProductUpdate) {
   try {
@@ -14,6 +115,9 @@ export async function updateProductById(id: string, update: ProductUpdate) {
     const updateData: ProductUpdate = { ...update };
     if (typeof updateData.name === "string") {
       updateData.name = updateData.name.toUpperCase();
+    }
+    if (updateData.purchase_price !== undefined) {
+      updateData.purchase_price = Number(updateData.purchase_price ?? 0);
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
@@ -32,7 +136,7 @@ export async function updateProductById(id: string, update: ProductUpdate) {
     return {
       success: true,
       message: "Product updated successfully",
-      data: JSON.parse(JSON.stringify(updatedProduct)),
+      data: structuredClone(updatedProduct),
     };
   } catch (error) {
     console.error("Error updating product:", error);
@@ -107,7 +211,7 @@ export async function getProductByBarcode(barCode: string) {
     return {
       success: true,
       message: "Product fetched successfully",
-      data: JSON.parse(JSON.stringify(product)),
+      data: structuredClone(product),
     };
   } catch (error) {
     console.error("Error fetching product by barcode:", error);

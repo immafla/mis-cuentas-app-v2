@@ -2,6 +2,7 @@
 
 import connectDB from "@/lib/mongodb";
 import Sale from "@/lib/models/Sale";
+import Product from "@/lib/models/Product";
 import { Types } from "mongoose";
 
 type SaleInputItem = {
@@ -10,6 +11,7 @@ type SaleInputItem = {
   barCode: string;
   quantity: number;
   price: number;
+  purchasePrice: number;
 };
 
 type DashboardSale = {
@@ -18,11 +20,34 @@ type DashboardSale = {
   total: number;
   items: number;
   soldAt: string;
+  totalCost: number;
+  totalProfit: number;
+  soldItems: {
+    name: string;
+    barCode: string;
+    quantity: number;
+    unitPrice: number;
+    unitCost: number;
+    lineTotal: number;
+    lineCost: number;
+    lineProfit: number;
+  }[];
 };
 
 type SaleItemSummary = {
   name: string;
   quantity: number;
+};
+
+type SaleStoredItem = {
+  name: string;
+  barCode: string;
+  quantity: number;
+  unitPrice: number;
+  unitCost: number;
+  lineTotal: number;
+  lineCost: number;
+  lineProfit: number;
 };
 
 type SaleHistoryRow = {
@@ -61,9 +86,30 @@ export async function createSaleRecord(items: SaleInputItem[]) {
       };
     }
 
+    const productIds = items
+      .map((item) => item.id)
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+
+    const products = await Product.find({ _id: { $in: productIds } })
+      .select({ _id: 1, purchase_price: 1 })
+      .lean();
+
+    const purchaseByProductId = new Map<string, number>(
+      products.map((product) => [String(product._id), Number(product.purchase_price ?? 0)]),
+    );
+
     const normalizedItems = items.map((item) => {
       const quantity = Math.max(1, Number(item.quantity ?? 1));
       const unitPrice = Number(item.price ?? 0);
+      const purchaseFromProduct = purchaseByProductId.get(String(item.id));
+      const unitCost = Number(
+        purchaseFromProduct ??
+          (Number.isFinite(Number(item.purchasePrice)) ? item.purchasePrice : 0),
+      );
+      const lineTotal = quantity * unitPrice;
+      const lineCost = quantity * unitCost;
+      const lineProfit = lineTotal - lineCost;
 
       return {
         productId: String(item.id),
@@ -71,16 +117,23 @@ export async function createSaleRecord(items: SaleInputItem[]) {
         barCode: String(item.barCode),
         quantity,
         unitPrice,
-        lineTotal: quantity * unitPrice,
+        unitCost,
+        lineTotal,
+        lineCost,
+        lineProfit,
       };
     });
 
     const total = normalizedItems.reduce((sum, item) => sum + item.lineTotal, 0);
+    const totalCost = normalizedItems.reduce((sum, item) => sum + item.lineCost, 0);
+    const totalProfit = normalizedItems.reduce((sum, item) => sum + item.lineProfit, 0);
     const totalItems = normalizedItems.reduce((sum, item) => sum + item.quantity, 0);
 
     const sale = await Sale.create({
       items: normalizedItems,
       total,
+      totalCost,
+      totalProfit,
       totalItems,
       soldAt: new Date(),
     });
@@ -91,6 +144,8 @@ export async function createSaleRecord(items: SaleInputItem[]) {
       data: {
         id: String(sale._id),
         total,
+        totalCost,
+        totalProfit,
         totalItems,
         soldAt: sale.soldAt,
       },
@@ -121,9 +176,71 @@ export async function getDashboardSalesData(limit = 8) {
       total: Number(sale.total ?? 0),
       items: Number(sale.totalItems ?? 0),
       soldAt: new Date(sale.soldAt).toISOString(),
+      totalCost: Number(
+        sale.totalCost ??
+          (Array.isArray(sale.items)
+            ? (sale.items as SaleStoredItem[]).reduce(
+                (sum, item) =>
+                  sum +
+                  Number(item.lineCost ?? Number(item.unitCost ?? 0) * Number(item.quantity ?? 0)),
+                0,
+              )
+            : 0),
+      ),
+      totalProfit: Number(
+        sale.totalProfit ??
+          Number(sale.total ?? 0) -
+            (Array.isArray(sale.items)
+              ? (sale.items as SaleStoredItem[]).reduce(
+                  (sum, item) =>
+                    sum +
+                    Number(
+                      item.lineCost ?? Number(item.unitCost ?? 0) * Number(item.quantity ?? 0),
+                    ),
+                  0,
+                )
+              : 0),
+      ),
+      soldItems: Array.isArray(sale.items)
+        ? (sale.items as SaleStoredItem[]).map((item) => ({
+            name: String(item.name ?? ""),
+            barCode: String(item.barCode ?? ""),
+            quantity: Number(item.quantity ?? 0),
+            unitPrice: Number(item.unitPrice ?? 0),
+            unitCost: Number(item.unitCost ?? 0),
+            lineTotal: Number(item.lineTotal ?? 0),
+            lineCost:
+              Number(item.lineCost ?? 0) || Number(item.unitCost ?? 0) * Number(item.quantity ?? 0),
+            lineProfit:
+              Number(item.lineProfit ?? 0) ||
+              Number(item.lineTotal ?? 0) -
+                (Number(item.lineCost ?? 0) ||
+                  Number(item.unitCost ?? 0) * Number(item.quantity ?? 0)),
+          }))
+        : [],
     }));
 
     const totalSales = todaySales.reduce((sum, sale) => sum + Number(sale.total ?? 0), 0);
+    const totalCost = todaySales.reduce(
+      (sum, sale) =>
+        sum +
+        Number(
+          sale.totalCost ??
+            (Array.isArray(sale.items)
+              ? (sale.items as SaleStoredItem[]).reduce(
+                  (itemsSum, item) =>
+                    itemsSum +
+                    Number(
+                      item.lineCost ?? Number(item.unitCost ?? 0) * Number(item.quantity ?? 0),
+                    ),
+                  0,
+                )
+              : 0),
+        ),
+      0,
+    );
+    const totalProfit = totalSales - totalCost;
+    const netMarginPercent = totalSales > 0 ? Math.round((totalProfit / totalSales) * 100) : 0;
     const totalItems = todaySales.reduce((sum, sale) => sum + Number(sale.totalItems ?? 0), 0);
     const avgTicket = todaySales.length ? Math.round(totalSales / todaySales.length) : 0;
 
@@ -133,6 +250,9 @@ export async function getDashboardSalesData(limit = 8) {
         recentSales,
         kpis: {
           totalSales,
+          totalCost,
+          totalProfit,
+          netMarginPercent,
           totalItems,
           avgTicket,
           salesCount: todaySales.length,
@@ -150,6 +270,9 @@ export async function getDashboardSalesData(limit = 8) {
         recentSales: [] as DashboardSale[],
         kpis: {
           totalSales: 0,
+          totalCost: 0,
+          totalProfit: 0,
+          netMarginPercent: 0,
           totalItems: 0,
           avgTicket: 0,
           salesCount: 0,

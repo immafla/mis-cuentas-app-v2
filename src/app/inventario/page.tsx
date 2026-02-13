@@ -58,6 +58,7 @@ export default function InventarioPage() {
               open={createModalOpen}
               onClose={() => setCreateModalOpen(false)}
               onSubmit={handleCreateNewRow}
+              existingProductNames={tableData.map((product) => product.name)}
             />
           )}
 

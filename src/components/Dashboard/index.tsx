@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Box,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Chip,
   Container,
   Divider,
@@ -10,81 +13,27 @@ import {
   LinearProgress,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   Paper,
   Stack,
   Typography,
   CircularProgress,
 } from "@mui/material";
-import { getDashboardSalesData } from "@/services/sales.service";
-
-type DashboardSale = {
-  id: string;
-  customer: string;
-  total: number;
-  items: number;
-  soldAt: string;
-};
-
-type DashboardKpis = {
-  totalSales: number;
-  totalItems: number;
-  avgTicket: number;
-  salesCount: number;
-  goalProgress: number;
-};
+import useDashboard from "./hooks/useDashboard";
+import { DashboardSale } from "./interfaces";
 
 const Dashboard = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [recentSales, setRecentSales] = useState<DashboardSale[]>([]);
-  const [kpis, setKpis] = useState<DashboardKpis>({
-    totalSales: 0,
-    totalItems: 0,
-    avgTicket: 0,
-    salesCount: 0,
-    goalProgress: 0,
-  });
+  const { isLoading, recentSales, kpis, glassCardSx } = useDashboard();
+  const [selectedSale, setSelectedSale] = useState<DashboardSale | null>(null);
 
-  useEffect(() => {
-    let active = true;
+  const handleOpenSaleDetail = (sale: DashboardSale) => {
+    setSelectedSale(sale);
+  };
 
-    (async () => {
-      try {
-        const result = await getDashboardSalesData(8);
-
-        if (!active) {
-          return;
-        }
-
-        if (result.success && result.data) {
-          setRecentSales(result.data.recentSales);
-          setKpis(result.data.kpis);
-        }
-      } catch (error) {
-        console.error("Error loading dashboard sales", error);
-      } finally {
-        if (active) {
-          setIsLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const glassCardSx = useMemo(
-    () => ({
-      p: 3,
-      borderRadius: 2,
-      border: "1px solid rgba(255,255,255,0.45)",
-      backgroundColor: "rgba(255, 255, 255, 0.16)",
-      backdropFilter: "blur(12px)",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-    }),
-    [],
-  );
+  const handleCloseSaleDetail = () => {
+    setSelectedSale(null);
+  };
 
   return (
     <Box
@@ -100,13 +49,13 @@ const Dashboard = () => {
         <Stack spacing={3}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
-              Dashboard de ventas
+              Información de ventas
             </Typography>
             <Typography color="text.secondary">Resumen rápido del desempeño del día.</Typography>
           </Box>
 
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper elevation={0} sx={glassCardSx}>
                 <Stack spacing={1}>
                   <Typography color="text.secondary" variant="subtitle2">
@@ -121,7 +70,7 @@ const Dashboard = () => {
                 </Stack>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper elevation={0} sx={glassCardSx}>
                 <Stack spacing={1}>
                   <Typography color="text.secondary" variant="subtitle2">
@@ -134,16 +83,29 @@ const Dashboard = () => {
                 </Stack>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper elevation={0} sx={glassCardSx}>
                 <Stack spacing={1}>
                   <Typography color="text.secondary" variant="subtitle2">
-                    Ticket promedio
+                    Ganancia neta
                   </Typography>
                   <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                    {`$ ${kpis.avgTicket}`}
+                    {`$ ${kpis.totalProfit}`}
                   </Typography>
-                  <Typography color="text.secondary">Promedio por venta</Typography>
+                  <Typography color="text.secondary">{`Costo total: $ ${kpis.totalCost}`}</Typography>
+                </Stack>
+              </Paper>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Paper elevation={0} sx={glassCardSx}>
+                <Stack spacing={1}>
+                  <Typography color="text.secondary" variant="subtitle2">
+                    Margen neto
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                    {`${kpis.netMarginPercent}%`}
+                  </Typography>
+                  <Typography color="text.secondary">Utilidad / ventas del día</Typography>
                 </Stack>
               </Paper>
             </Grid>
@@ -176,12 +138,21 @@ const Dashboard = () => {
                       )}
                       {recentSales.map((sale, index) => (
                         <Box key={sale.id}>
-                          <ListItem sx={{ px: 0 }}>
-                            <ListItemText
-                              primary={sale.customer}
-                              secondary={`#${sale.id.slice(-6).toUpperCase()} · ${sale.items} items · ${new Date(sale.soldAt).toLocaleString("es-CO")}`}
-                            />
-                            <Typography sx={{ fontWeight: 600 }}>{`$ ${sale.total}`}</Typography>
+                          <ListItem disablePadding>
+                            <ListItemButton
+                              onClick={() => handleOpenSaleDetail(sale)}
+                              sx={{
+                                px: 2,
+                                borderRadius: 1,
+                                "&:hover": { backgroundColor: "action.hover" },
+                              }}
+                            >
+                              <ListItemText
+                                primary={sale.customer}
+                                secondary={`${sale.items} items · ${new Date(sale.soldAt).toLocaleString("es-CO")} · Haz click para ver detalle`}
+                              />
+                              <Typography sx={{ fontWeight: 600 }}>{`$ ${sale.total}`}</Typography>
+                            </ListItemButton>
                           </ListItem>
                           {index < recentSales.length - 1 && <Divider />}
                         </Box>
@@ -212,6 +183,49 @@ const Dashboard = () => {
           </Grid>
         </Stack>
       </Container>
+
+      <Dialog open={Boolean(selectedSale)} onClose={handleCloseSaleDetail} fullWidth maxWidth="sm">
+        <DialogTitle>Detalle de venta</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ pt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              {selectedSale
+                ? `${new Date(selectedSale.soldAt).toLocaleString("es-CO")} · ${selectedSale.items} items`
+                : ""}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedSale
+                ? `Venta: $ ${selectedSale.total} · Costo: $ ${selectedSale.totalCost} · Utilidad: $ ${selectedSale.totalProfit}`
+                : ""}
+            </Typography>
+            <Divider />
+            <List disablePadding>
+              {selectedSale?.soldItems.map((item, index) => (
+                <Box key={`${item.barCode}-${index}`}>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText
+                      primary={item.name}
+                      secondary={`${item.quantity} x $ ${item.unitPrice} · Compra: $ ${item.unitCost} · Utilidad: $ ${item.lineProfit} · Código: ${item.barCode}`}
+                    />
+                    <Typography sx={{ fontWeight: 600 }}>{`$ ${item.lineTotal}`}</Typography>
+                  </ListItem>
+                  {selectedSale.soldItems.length - 1 > index && <Divider />}
+                </Box>
+              ))}
+            </List>
+            {!selectedSale?.soldItems.length && (
+              <Typography variant="body2" color="text.secondary">
+                Esta venta no tiene ítems disponibles.
+              </Typography>
+            )}
+            <Divider />
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography sx={{ fontWeight: 600 }}>Total</Typography>
+              <Typography sx={{ fontWeight: 700 }}>{`$ ${selectedSale?.total ?? 0}`}</Typography>
+            </Stack>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

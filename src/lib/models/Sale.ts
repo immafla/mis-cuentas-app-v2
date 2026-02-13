@@ -6,12 +6,17 @@ export interface ISaleItem {
   barCode: string;
   quantity: number;
   unitPrice: number;
+  unitCost: number;
   lineTotal: number;
+  lineCost: number;
+  lineProfit: number;
 }
 
 export interface ISale extends Document {
   items: ISaleItem[];
   total: number;
+  totalCost: number;
+  totalProfit: number;
   totalItems: number;
   soldAt: Date;
 }
@@ -23,7 +28,10 @@ const SaleItemSchema = new Schema<ISaleItem>(
     barCode: { type: String, required: true },
     quantity: { type: Number, required: true },
     unitPrice: { type: Number, required: true },
+    unitCost: { type: Number, required: true },
     lineTotal: { type: Number, required: true },
+    lineCost: { type: Number, required: true },
+    lineProfit: { type: Number, required: true },
   },
   { _id: false },
 );
@@ -32,6 +40,8 @@ const SaleSchema = new Schema<ISale>(
   {
     items: { type: [SaleItemSchema], required: true },
     total: { type: Number, required: true },
+    totalCost: { type: Number, required: true },
+    totalProfit: { type: Number, required: true },
     totalItems: { type: Number, required: true },
     soldAt: { type: Date, required: true, default: Date.now },
   },

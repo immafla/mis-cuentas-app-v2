@@ -29,20 +29,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    await connectDB();
-    const body = await request.json();
-    const newProduct = new Product(body);
-    newProduct.name = newProduct.name.toUpperCase();
-    await newProduct.save();
-    return NextResponse.json(newProduct, { status: 201 });
-  } catch (error) {
-    console.error("Error creating product:", error);
-    return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
-  }
-}
-
 export async function DELETE(request: NextRequest) {
   try {
     await connectDB();

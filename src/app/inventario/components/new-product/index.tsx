@@ -1,8 +1,8 @@
-import React, { FC, useState, useEffect, SetStateAction } from "react";
-import { Modal } from "../../../../components/Modal/index";
-import { MRT_ColumnDef } from "material-react-table";
+import React, { FC } from "react";
+import { Modal } from "@/components/Modal";
 import styles from "./styles.module.css";
 import {
+  FormHelperText,
   MenuItem,
   TextField,
   FormControl,
@@ -12,158 +12,115 @@ import {
   InputAdornment,
   OutlinedInput,
 } from "@mui/material";
-import { ApiService } from "../../../../services/api.service";
+import { NewProductModalProps } from "./types";
+import { useNewProductModal } from "./hooks/useNewProductModal";
 
-export const NewProductModal: FC<{
-  columns: MRT_ColumnDef<any>[];
-  onClose: () => void;
-  onSubmit: (values: any) => void;
-  open: boolean;
-}> = ({ columns, open, onClose, onSubmit }) => {
-  const apiService = new ApiService();
-
-  const [brandList, setBrandList] = useState<any[]>([]);
-
-  const [bussinesCategoryList, setBussinesCategoryList] = useState<any[]>([]);
-
-  const [brandSelected, setBrandSelected] = useState({
-    label: "",
-    value: "",
-  });
-
-  const [categorySelected, setCategorySelected] = useState({
-    label: "",
-    value: "",
-  });
-
-  const [values, setValues] = useState<any>(() =>
-    columns.reduce((acc, column) => {
-      acc[column.accessorKey ?? ""] = "";
-      return acc;
-    }, {} as any),
-  );
-
-  const onSubmitModal = () => {
-    onSubmit({
-      ...values,
-      amount: 0,
-      brand: brandSelected.value,
-      category: categorySelected.value,
-    });
-  };
-
-  const getBrandList = async () => {
-    try {
-      const productsResponse = await (await apiService.getAllBrands()).json();
-      if (productsResponse) {
-        setBrandList(
-          productsResponse.map((el: any) => ({
-            value: el._id,
-            label: el.name,
-          })),
-        );
-      }
-    } catch (e) {
-      console.log("Error al obtener las marcas =>", { e });
-    }
-  };
-
-  const getBussinesCategoryList = async () => {
-    try {
-      const bussinesCategoryResponse = await (await apiService.getAllBussinesCategory()).json();
-      if (bussinesCategoryResponse) {
-        setBussinesCategoryList(
-          bussinesCategoryResponse.map((el: any) => ({
-            value: el._id,
-            label: el.name,
-          })),
-        );
-      }
-    } catch (e) {
-      console.log("Error al obtener las marcas =>", { e });
-    }
-  };
-
-  useEffect(() => {
-    getBussinesCategoryList();
-    getBrandList();
-  }, []);
-
-  useEffect(() => {
-    console.log({ values });
-  }, [values]);
+export const NewProductModal: FC<NewProductModalProps> = ({
+  columns,
+  open,
+  onClose,
+  onSubmit,
+  existingProductNames,
+}) => {
+  const {
+    brandList,
+    bussinesCategoryList,
+    brandSelected,
+    categorySelected,
+    values,
+    errors,
+    formColumns,
+    onSubmitModal,
+    handleFieldChange,
+    handleBrandChange,
+    handleCategoryChange,
+  } = useNewProductModal({ columns, existingProductNames, onSubmit });
 
   return (
     <Modal open={open} onClose={onClose} onSubmit={onSubmitModal} title="Crear nuevo producto">
       <Box className={styles.container}>
-        {columns.map((column, index) => {
-          return column.accessorKey != "amount" &&
-            column.accessorKey != "brand" &&
-            column.accessorKey != "category" ? (
-            column.accessorKey == "sale_price" ? (
-              <FormControl
-                key={index}
-                fullWidth
-                className={column.accessorKey as string}
+        {formColumns.map((column) => {
+          const key = String(column.accessorKey ?? "");
+
+          return column.accessorKey == "sale_price" ? (
+            <FormControl
+              key={key}
+              fullWidth
+              className={column.accessorKey as string}
+              id={column.accessorKey as string}
+            >
+              <InputLabel htmlFor="outlined-adornment-amount">{column.header}</InputLabel>
+              <OutlinedInput
                 id={column.accessorKey as string}
-                //name={column.accessorKey as string}
-              >
-                <InputLabel htmlFor="outlined-adornment-amount">{column.header}</InputLabel>
-                <OutlinedInput
-                  key={index}
-                  id={column.accessorKey as string}
-                  name={column.accessorKey as string}
-                  startAdornment={<InputAdornment position="start">$</InputAdornment>}
-                  label={column.header}
-                  onChange={(e) => setValues({ ...values, [e.target.name]: e.target.value })}
-                />
-              </FormControl>
-            ) : (
-              <TextField
-                className={column.accessorKey as string}
-                key={index}
-                id={column.accessorKey as string}
-                label={column.header}
                 name={column.accessorKey as string}
-                variant="outlined"
-                onChange={(e) => setValues({ ...values, [e.target.name]: e.target.value })}
+                startAdornment={<InputAdornment position="start">$</InputAdornment>}
+                label={column.header}
+                value={values[key] ?? ""}
+                error={Boolean(errors[key])}
+                onChange={(e) => {
+                  const { name, value } = e.target;
+                  handleFieldChange(name, value);
+                }}
               />
-            )
-          ) : null;
+              <FormHelperText error>{errors[key]}</FormHelperText>
+            </FormControl>
+          ) : (
+            <TextField
+              className={column.accessorKey as string}
+              key={key}
+              id={column.accessorKey as string}
+              label={column.header}
+              name={column.accessorKey as string}
+              variant="outlined"
+              value={values[key] ?? ""}
+              error={Boolean(errors[key])}
+              helperText={errors[key] ?? ""}
+              onChange={(e) => {
+                const { name, value } = e.target;
+                handleFieldChange(name, value);
+              }}
+            />
+          );
         })}
 
-        <FormControl fullWidth>
+        <FormControl fullWidth error={Boolean(errors.brand)}>
           <InputLabel id="brand-label">Marca</InputLabel>
           <Select
             labelId="brand-label"
             id="brand"
-            value={brandSelected.value}
+            value={brandSelected}
             label="Brand"
-            onChange={(event) => setBrandSelected(event.target as SetStateAction<any>)}
+            onChange={(event) => {
+              handleBrandChange(String(event.target.value));
+            }}
           >
-            {brandList.map((element, index) => (
-              <MenuItem key={index} value={element.value}>
+            {brandList.map((element) => (
+              <MenuItem key={element.value} value={element.value}>
                 {element.label}
               </MenuItem>
             ))}
           </Select>
+          <FormHelperText>{errors.brand}</FormHelperText>
         </FormControl>
 
-        <FormControl fullWidth>
+        <FormControl fullWidth error={Boolean(errors.category)}>
           <InputLabel id="category-label">Categoria</InputLabel>
           <Select
             labelId="category-label"
             id="category"
-            value={categorySelected.value}
+            value={categorySelected}
             label="Category"
-            onChange={(event) => setCategorySelected(event.target as SetStateAction<any>)}
+            onChange={(event) => {
+              handleCategoryChange(String(event.target.value));
+            }}
           >
-            {bussinesCategoryList.map((element, index) => (
-              <MenuItem key={index} value={element.value}>
+            {bussinesCategoryList.map((element) => (
+              <MenuItem key={element.value} value={element.value}>
                 {element.label}
               </MenuItem>
             ))}
           </Select>
+          <FormHelperText>{errors.category}</FormHelperText>
         </FormControl>
       </Box>
     </Modal>
