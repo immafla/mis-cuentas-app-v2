@@ -1,6 +1,7 @@
 import React from "react";
 import {
   MaterialReactTable,
+  useMaterialReactTable,
   // MaterialReactTableProps,
   // MRT_Cell,
   // MRT_ColumnDef,
@@ -9,6 +10,7 @@ import {
 import { Delete, Edit, AddCircle } from "@mui/icons-material";
 import { MRT_Localization_ES } from "material-react-table/locales/es";
 import { Button, Box, Tooltip, IconButton, useTheme, useMediaQuery } from "@mui/material";
+import { useGlobalContext } from "@/context/global";
 
 const Table = ({
   columns,
@@ -40,6 +42,17 @@ const Table = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isSaving, setIsSaving] = React.useState(false);
+  const tableId = React.useId();
+  const { isLoadingTable, setTableSourceLoading, runWithTableLoading } = useGlobalContext();
+
+  React.useEffect(() => {
+    const currentLoadingState = Boolean(isLoading || isSaving);
+    setTableSourceLoading(tableId, currentLoadingState);
+
+    return () => {
+      setTableSourceLoading(tableId, false);
+    };
+  }, [isLoading, isSaving, setTableSourceLoading, tableId]);
 
   const ToolbarActions = () => (
     <Button
@@ -78,7 +91,11 @@ const Table = ({
           <IconButton
             size={isMobile ? "small" : "medium"}
             color="error"
-            onClick={() => handleDeleteRow(row)}
+            onClick={() => {
+              void runWithTableLoading(async () => {
+                await Promise.resolve(handleDeleteRow(row));
+              });
+            }}
           >
             <Delete fontSize={isMobile ? "small" : "medium"} />
           </IconButton>
@@ -87,113 +104,117 @@ const Table = ({
     </Box>
   );
 
-  return (
-    <MaterialReactTable
-      positionActionsColumn="last"
-      muiTableBodyRowProps={{ hover: false }}
-      enableDensityToggle={false}
-      enableFullScreenToggle={false}
-      enableHiding={false}
-      enableRowOrdering={false}
-      enableColumnFilters={false}
-      enableSorting={false}
-      initialState={{ density: "compact", showGlobalFilter: true }}
-      editDisplayMode="modal"
-      localization={MRT_Localization_ES}
-      columns={columns}
-      data={tableData}
-      state={{ isLoading, isSaving }}
-      muiTablePaperProps={{
-        sx: {
-          width: "100%",
-          overflow: "hidden",
-          height: {
-            xs: "calc(100dvh - 180px)",
-            sm: "calc(100dvh - 140px)",
-          },
-          maxHeight: {
-            xs: "calc(100dvh - 180px)",
-            sm: "calc(100dvh - 140px)",
-          },
-          display: "flex",
-          flexDirection: "column",
+  const table = useMaterialReactTable({
+    positionActionsColumn: "last",
+    muiTableBodyRowProps: { hover: false },
+    enableDensityToggle: false,
+    enableFullScreenToggle: false,
+    enableHiding: false,
+    enableRowOrdering: false,
+    enableColumnFilters: false,
+    enableSorting: false,
+    initialState: { density: "compact", showGlobalFilter: true },
+    editDisplayMode: "modal",
+    localization: MRT_Localization_ES,
+    columns,
+    data: tableData,
+    state: { isLoading: isLoading || isLoadingTable, isSaving },
+    muiTablePaperProps: {
+      sx: {
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        overflow: "hidden",
+        height: {
+          xs: "calc(100dvh - 180px)",
+          sm: "calc(100dvh - 140px)",
         },
-      }}
-      muiTableContainerProps={{
-        sx: {
-          maxWidth: "100%",
-          overflowX: "auto",
-          overflowY: "auto",
-          flex: 1,
-          minHeight: 0,
+        maxHeight: {
+          xs: "calc(100dvh - 180px)",
+          sm: "calc(100dvh - 140px)",
         },
-      }}
-      muiTopToolbarProps={{
-        sx: {
-          px: isMobile ? 1 : 2,
-          py: isMobile ? 1 : 1.5,
-          gap: isMobile ? 1 : 1.5,
-          flexWrap: "wrap",
-        },
-      }}
-      muiCircularProgressProps={{
-        color: "secondary",
-        thickness: 5,
-        size: 55,
-      }}
-      muiSkeletonProps={{
-        animation: "pulse",
-        height: 28,
-      }}
-      enableRowActions={showEditAction || showDeleteAction}
-      enableStickyHeader
-      enableEditing={showEditAction}
-      onEditingRowSave={
-        showEditAction
-          ? async (props) => {
-              setIsSaving(true);
-              try {
-                await handleSaveRowEdits(props);
-              } finally {
-                setIsSaving(false);
-              }
+        display: "flex",
+        flexDirection: "column",
+      },
+    },
+    muiTableContainerProps: {
+      sx: {
+        width: "100%",
+        maxWidth: "100%",
+        overflowX: "auto",
+        overflowY: "auto",
+        flex: 1,
+        minHeight: 0,
+      },
+    },
+    muiTopToolbarProps: {
+      sx: {
+        px: isMobile ? 1 : 2,
+        py: isMobile ? 1 : 1.5,
+        gap: isMobile ? 1 : 1.5,
+        flexWrap: "wrap",
+      },
+    },
+    muiCircularProgressProps: {
+      color: "secondary",
+      thickness: 5,
+      size: 55,
+    },
+    muiSkeletonProps: {
+      animation: "pulse",
+      height: 28,
+    },
+    enableRowActions: showEditAction || showDeleteAction,
+    enableStickyHeader: true,
+    enableEditing: showEditAction,
+    onEditingRowSave: showEditAction
+      ? async (props) => {
+          await runWithTableLoading(async () => {
+            setIsSaving(true);
+            try {
+              await Promise.resolve(handleSaveRowEdits(props));
+            } finally {
+              setIsSaving(false);
             }
-          : undefined
-      }
-      onEditingRowCancel={showEditAction ? handleCancelRowEdits : undefined}
-      displayColumnDefOptions={{
-        "mrt-row-actions": {
-          header: actionsHeader,
-          muiTableHeadCellProps: {
-            align: "left",
-          },
-          size: 20,
+          });
+        }
+      : undefined,
+    onEditingRowCancel: showEditAction ? handleCancelRowEdits : undefined,
+    displayColumnDefOptions: {
+      "mrt-row-actions": {
+        header: actionsHeader,
+        muiTableHeadCellProps: {
+          align: "left",
         },
-      }}
-      muiSearchTextFieldProps={{
-        placeholder: searchPlaceholder,
-        sx: {
-          minWidth: isMobile ? "100%" : "260px",
-          width: isMobile ? "100%" : "auto",
-        },
-        size: isMobile ? "small" : "medium",
-        variant: "outlined",
-      }}
-      renderRowActions={
-        showEditAction || showDeleteAction
-          ? ({ row, table }) => <RowActions row={row} table={table} />
-          : undefined
-      }
-      renderTopToolbarCustomActions={
-        showCreateButton
-          ? () => (
-              <Box sx={{ width: isMobile ? "100%" : "auto" }}>
-                <ToolbarActions />
-              </Box>
-            )
-          : undefined
-      }
-    />
+        size: 20,
+      },
+    },
+    muiSearchTextFieldProps: {
+      placeholder: searchPlaceholder,
+      sx: {
+        minWidth: isMobile ? "100%" : "260px",
+        width: isMobile ? "100%" : "auto",
+      },
+      size: isMobile ? "small" : "medium",
+      variant: "outlined",
+    },
+    renderRowActions:
+      showEditAction || showDeleteAction
+        ? ({ row, table }) => <RowActions row={row} table={table} />
+        : undefined,
+    renderTopToolbarCustomActions: showCreateButton
+      ? () => (
+          <Box sx={{ width: isMobile ? "100%" : "auto" }}>
+            <ToolbarActions />
+          </Box>
+        )
+      : undefined,
+  });
+
+  return (
+    <Box sx={{ width: "100%", maxWidth: "100%", minWidth: 0 }}>
+      <MaterialReactTable table={table} />
+    </Box>
   );
 };
 

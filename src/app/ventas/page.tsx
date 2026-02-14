@@ -142,7 +142,6 @@ const NewSale = () => {
                       size="small"
                       label="Buscar y añadir producto"
                       placeholder="Nombre o código de barras"
-                      helperText="Usa ↑ ↓ + Enter para seleccionar. Atajo: Ctrl+K"
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (

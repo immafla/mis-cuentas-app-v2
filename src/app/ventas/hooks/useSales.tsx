@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { getProductByBarcode } from "../../../services/products.service";
 import { createSaleRecord } from "@/services/sales.service";
@@ -23,7 +24,10 @@ export type ProductSearchOption = {
 
 const initialSaleProducts: SaleLineItem[] = [];
 
+const normalizeBarcode = (value: string) => value.trim();
+
 export const useSales = () => {
+  const router = useRouter();
   const [listSelectedProducts, setListSelectedProducts] =
     useState<SaleLineItem[]>(initialSaleProducts);
   const [isPaying, setIsPaying] = useState(false);
@@ -37,12 +41,21 @@ export const useSales = () => {
   const lastKeyTimeRef = useRef(0);
 
   const addProductByBarcode = useCallback(async (barCode: string) => {
+    const normalizedBarCode = normalizeBarcode(barCode);
+
+    if (!normalizedBarCode) {
+      return;
+    }
+
     try {
-      const { success, data } = await getProductByBarcode(barCode);
+      const { success, data } = await getProductByBarcode(normalizedBarCode);
 
       if (!success || !data) {
         throw new Error("Producto no encontrado");
       }
+
+      const productId = String(data._id ?? "");
+      const productBarCode = normalizeBarcode(String(data.bar_code ?? normalizedBarCode));
 
       setListSelectedProducts((prevState) => {
         if ((data.amount ?? 0) <= 0) {
@@ -50,16 +63,14 @@ export const useSales = () => {
           return prevState;
         }
 
-        const existingIndex = prevState.findIndex(
-          (item) => item.id === data._id && item.barCode === barCode,
-        );
+        const existingIndex = prevState.findIndex((item) => item.id === productId);
 
         if (existingIndex === -1) {
           return [
             ...prevState,
             {
-              id: data._id,
-              barCode,
+              id: productId,
+              barCode: productBarCode,
               name: data.name,
               price: Number(data.sale_price),
               purchasePrice: 0,
@@ -92,22 +103,23 @@ export const useSales = () => {
   }, []);
 
   const addProductToSale = useCallback((product: ProductSearchOption) => {
+    const productId = String(product._id ?? "");
+    const productBarCode = normalizeBarcode(String(product.bar_code ?? ""));
+
     setListSelectedProducts((prevState) => {
       if ((product.amount ?? 0) <= 0) {
         setStockWarning(`Sin stock disponible para ${product.name}`);
         return prevState;
       }
 
-      const existingIndex = prevState.findIndex(
-        (item) => item.id === product._id && item.barCode === product.bar_code,
-      );
+      const existingIndex = prevState.findIndex((item) => item.id === productId);
 
       if (existingIndex === -1) {
         return [
           ...prevState,
           {
-            id: product._id,
-            barCode: product.bar_code,
+            id: productId,
+            barCode: productBarCode,
             name: product.name,
             price: Number(product.sale_price),
             purchasePrice: 0,
@@ -263,10 +275,13 @@ export const useSales = () => {
         }),
       );
 
-      const updates = listSelectedProducts.map(({ id, amount, quantity }) => ({
-        id,
-        amount: Math.max((amount ?? 0) - quantity, 0),
-      }));
+      const updates = Array.from(
+        listSelectedProducts.reduce((accumulator, item) => {
+          const previousQuantity = accumulator.get(item.id) ?? 0;
+          accumulator.set(item.id, previousQuantity + Number(item.quantity ?? 0));
+          return accumulator;
+        }, new Map<string, number>()),
+      ).map(([id, quantity]) => ({ id, quantity }));
 
       const response = await fetch("/api/products/amount", {
         method: "PUT",
@@ -297,13 +312,16 @@ export const useSales = () => {
 
       setListSelectedProducts([]);
       setSaleSuccessMessage("Venta registrada correctamente");
+      globalThis.setTimeout(() => {
+        router.push("/");
+      }, 350);
     } catch (error) {
       console.error("Error al actualizar el inventario", error);
       setStockWarning("No se pudo procesar la venta. Intenta de nuevo.");
     } finally {
       setIsPaying(false);
     }
-  }, [isPaying, listSelectedProducts, totalItems]);
+  }, [isPaying, listSelectedProducts, router, totalItems]);
 
   useEffect(() => {
     const trimmedSearch = productSearchInput.trim();
@@ -372,8 +390,10 @@ export const useSales = () => {
         const scannedBarCode = bufferRef.current;
         bufferRef.current = "";
 
-        if (scannedBarCode.length > 2) {
-          addProductByBarcode(scannedBarCode);
+        const normalizedScannedBarCode = normalizeBarcode(scannedBarCode);
+
+        if (normalizedScannedBarCode.length > 2) {
+          addProductByBarcode(normalizedScannedBarCode);
         }
         return;
       }

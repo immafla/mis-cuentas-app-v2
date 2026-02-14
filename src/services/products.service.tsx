@@ -134,7 +134,7 @@ export async function updateProductById(id: string, update: ProductUpdate) {
 
 type ProductAmountUpdate = {
   id: string;
-  amount: number;
+  quantity: number;
 };
 
 export async function updateProductsAmountBatch(updates: ProductAmountUpdate[]) {
@@ -149,16 +149,44 @@ export async function updateProductsAmountBatch(updates: ProductAmountUpdate[]) 
       };
     }
 
-    const operations = updates.map(({ id, amount }) => ({
-      updateOne: {
-        filter: { _id: id },
-        update: { $set: { amount } },
-      },
-    }));
+    const normalizedUpdates = updates
+      .map((update) => ({
+        id: String(update.id ?? "").trim(),
+        quantity: Math.max(0, Math.floor(Number(update.quantity ?? 0))),
+      }))
+      .filter((update) => update.id.length > 0 && update.quantity > 0);
 
-    const result = await Product.bulkWrite(operations, {
-      ordered: false,
+    if (!normalizedUpdates.length) {
+      return {
+        success: true,
+        message: "No valid updates to apply",
+        data: [],
+      };
+    }
+
+    const products = await Product.find({
+      _id: { $in: normalizedUpdates.map((update) => update.id) },
+    })
+      .select("_id amount")
+      .lean();
+
+    const currentAmountById = new Map(
+      products.map((product) => [String(product._id), Number(product.amount ?? 0)]),
+    );
+
+    const operations = normalizedUpdates.map(({ id, quantity }) => {
+      const currentAmount = currentAmountById.get(id) ?? 0;
+      const nextAmount = Math.max(currentAmount - quantity, 0);
+
+      return {
+        updateOne: {
+          filter: { _id: id },
+          update: { $set: { amount: nextAmount } },
+        },
+      };
     });
+
+    const result = await Product.bulkWrite(operations, { ordered: false });
 
     return {
       success: true,
