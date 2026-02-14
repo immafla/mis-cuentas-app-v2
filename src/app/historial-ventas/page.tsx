@@ -103,15 +103,14 @@ export default function HistorialVentasPage() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        backgroundSize: "100% 100%",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundBlendMode: "screen",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
     >
-      <Container maxWidth={false} disableGutters sx={{ py: 0, px: 0 }}>
-        <Stack spacing={0}>
+      <Container maxWidth={false} disableGutters sx={{ py: 0, px: 0, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
               Historial de ventas

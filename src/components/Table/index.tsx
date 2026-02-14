@@ -125,14 +125,8 @@ const Table = ({
         maxWidth: "100%",
         minWidth: 0,
         overflow: "hidden",
-        height: {
-          xs: "calc(100dvh - 180px)",
-          sm: "calc(100dvh - 140px)",
-        },
-        maxHeight: {
-          xs: "calc(100dvh - 180px)",
-          sm: "calc(100dvh - 140px)",
-        },
+        flex: 1,
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
       },
@@ -153,6 +147,19 @@ const Table = ({
         py: isMobile ? 1 : 1.5,
         gap: isMobile ? 1 : 1.5,
         flexWrap: "wrap",
+        flexShrink: 0,
+        ...(isMobile && {
+          flexDirection: "column",
+          alignItems: "stretch",
+          "& > *": {
+            width: "100%",
+          },
+        }),
+      },
+    },
+    muiBottomToolbarProps: {
+      sx: {
+        flexShrink: 0,
       },
     },
     muiCircularProgressProps: {
@@ -212,7 +219,7 @@ const Table = ({
   });
 
   return (
-    <Box sx={{ width: "100%", maxWidth: "100%", minWidth: 0 }}>
+    <Box sx={{ width: "100%", maxWidth: "100%", minWidth: 0, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <MaterialReactTable table={table} />
     </Box>
   );
