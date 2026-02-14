@@ -28,8 +28,8 @@ const LotesPage = () => {
         backgroundBlendMode: "screen",
       }}
     >
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Stack spacing={3}>
+      <Container maxWidth={false} disableGutters sx={{ py: 0, px: 0 }}>
+        <Stack spacing={0}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
               Lotes

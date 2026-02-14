@@ -252,7 +252,7 @@ export const MiniDrawer = ({
   }, []);
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", padding: 0, margin: 0 }}>
       <CssBaseline />
       <AppBar
         position="fixed"
@@ -333,8 +333,6 @@ export const MiniDrawer = ({
         sx={{
           flexGrow: 1,
           width: "100%",
-          p: 3,
-          pb: isMobile ? 10 : 3,
           transition: theme.transitions.create(["margin"], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.standard,

@@ -107,12 +107,25 @@ const Table = ({
         sx: {
           width: "100%",
           overflow: "hidden",
+          height: {
+            xs: "calc(100dvh - 180px)",
+            sm: "calc(100dvh - 140px)",
+          },
+          maxHeight: {
+            xs: "calc(100dvh - 180px)",
+            sm: "calc(100dvh - 140px)",
+          },
+          display: "flex",
+          flexDirection: "column",
         },
       }}
       muiTableContainerProps={{
         sx: {
           maxWidth: "100%",
           overflowX: "auto",
+          overflowY: "auto",
+          flex: 1,
+          minHeight: 0,
         },
       }}
       muiTopToolbarProps={{
@@ -133,6 +146,7 @@ const Table = ({
         height: 28,
       }}
       enableRowActions={showEditAction || showDeleteAction}
+      enableStickyHeader
       enableEditing={showEditAction}
       onEditingRowSave={
         showEditAction
