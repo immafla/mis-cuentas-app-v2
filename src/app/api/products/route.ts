@@ -22,7 +22,12 @@ export async function GET(request: NextRequest) {
 
     const products = await Product.find(filters).sort({ name: 1 }).limit(limit).lean();
 
-    return NextResponse.json(products);
+    const normalizedProducts = products.map((product) => ({
+      ...product,
+      _id: String(product._id),
+    }));
+
+    return NextResponse.json(normalizedProducts);
   } catch (error) {
     console.error("Error fetching products:", error);
     return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });

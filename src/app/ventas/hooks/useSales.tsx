@@ -26,6 +26,50 @@ const initialSaleProducts: SaleLineItem[] = [];
 
 const normalizeBarcode = (value: string) => value.trim();
 
+const sanitizeIdText = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed === "[object Object]" ? "" : trimmed;
+};
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === "object";
+
+const normalizeMongoId = (value: unknown): string => {
+  if (typeof value === "string") {
+    return sanitizeIdText(value);
+  }
+
+  if (!isObject(value)) {
+    return "";
+  }
+
+  const asObject = value as {
+    $oid?: unknown;
+    toHexString?: () => string;
+    toString?: () => string;
+    _id?: unknown;
+  };
+
+  if (typeof asObject.$oid === "string") {
+    return sanitizeIdText(asObject.$oid);
+  }
+
+  if (typeof asObject.toHexString === "function") {
+    return sanitizeIdText(asObject.toHexString());
+  }
+
+  const nestedId = normalizeMongoId(asObject._id);
+  if (nestedId) {
+    return nestedId;
+  }
+
+  if (typeof asObject.toString === "function") {
+    return sanitizeIdText(asObject.toString());
+  }
+
+  return "";
+};
+
 export const useSales = () => {
   const router = useRouter();
   const [listSelectedProducts, setListSelectedProducts] =
@@ -54,8 +98,13 @@ export const useSales = () => {
         throw new Error("Producto no encontrado");
       }
 
-      const productId = String(data._id ?? "");
+      const productId = normalizeMongoId(data._id);
       const productBarCode = normalizeBarcode(String(data.bar_code ?? normalizedBarCode));
+
+      if (!productId) {
+        setStockWarning("No se pudo identificar el producto escaneado. Intenta de nuevo.");
+        return;
+      }
 
       setListSelectedProducts((prevState) => {
         if ((data.amount ?? 0) <= 0) {
@@ -103,8 +152,13 @@ export const useSales = () => {
   }, []);
 
   const addProductToSale = useCallback((product: ProductSearchOption) => {
-    const productId = String(product._id ?? "");
+    const productId = normalizeMongoId(product._id);
     const productBarCode = normalizeBarcode(String(product.bar_code ?? ""));
+
+    if (!productId) {
+      setStockWarning("No se pudo identificar el producto seleccionado. Intenta de nuevo.");
+      return;
+    }
 
     setListSelectedProducts((prevState) => {
       if ((product.amount ?? 0) <= 0) {
@@ -264,24 +318,33 @@ export const useSales = () => {
 
     setIsPaying(true);
     try {
-      const soldItems = listSelectedProducts.map(
-        ({ id, barCode, name, price, purchasePrice, quantity }) => ({
+      const soldItems = listSelectedProducts
+        .filter((item) => normalizeMongoId(item.id).length > 0)
+        .map(({ id, barCode, name, price, purchasePrice, quantity }) => ({
           id,
           barCode,
           name,
           price,
           purchasePrice,
           quantity,
-        }),
-      );
+        }));
 
       const updates = Array.from(
         listSelectedProducts.reduce((accumulator, item) => {
-          const previousQuantity = accumulator.get(item.id) ?? 0;
-          accumulator.set(item.id, previousQuantity + Number(item.quantity ?? 0));
+          const normalizedId = normalizeMongoId(item.id);
+          if (!normalizedId) {
+            return accumulator;
+          }
+
+          const previousQuantity = accumulator.get(normalizedId) ?? 0;
+          accumulator.set(normalizedId, previousQuantity + Number(item.quantity ?? 0));
           return accumulator;
         }, new Map<string, number>()),
       ).map(([id, quantity]) => ({ id, quantity }));
+
+      if (!updates.length || !soldItems.length) {
+        throw new Error("No hay productos válidos para procesar la venta");
+      }
 
       const response = await fetch("/api/products/amount", {
         method: "PUT",

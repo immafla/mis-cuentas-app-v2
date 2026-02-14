@@ -2,6 +2,7 @@
 
 import connectDB from "@/lib/mongodb";
 import Product, { IProduct } from "@/lib/models/Product";
+import { Types } from "mongoose";
 
 type ProductUpdate = Partial<
   Pick<IProduct, "name" | "brand" | "amount" | "category" | "sale_price" | "bar_code">
@@ -154,7 +155,13 @@ export async function updateProductsAmountBatch(updates: ProductAmountUpdate[]) 
         id: String(update.id ?? "").trim(),
         quantity: Math.max(0, Math.floor(Number(update.quantity ?? 0))),
       }))
-      .filter((update) => update.id.length > 0 && update.quantity > 0);
+      .filter(
+        (update) =>
+          update.id.length > 0 &&
+          update.id !== "[object Object]" &&
+          Types.ObjectId.isValid(update.id) &&
+          update.quantity > 0,
+      );
 
     if (!normalizedUpdates.length) {
       return {
