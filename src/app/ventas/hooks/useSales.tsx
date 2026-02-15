@@ -35,6 +35,7 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object";
 
 const normalizeMongoId = (value: unknown): string => {
+  console.log({ value });
   if (typeof value === "string") {
     return sanitizeIdText(value);
   }
@@ -85,7 +86,9 @@ export const useSales = () => {
   const lastKeyTimeRef = useRef(0);
 
   const addProductByBarcode = useCallback(async (barCode: string) => {
+    console.log({ barCode });
     const normalizedBarCode = normalizeBarcode(barCode);
+    console.log({ normalizedBarCode });
 
     if (!normalizedBarCode) {
       return;
@@ -93,7 +96,7 @@ export const useSales = () => {
 
     try {
       const { success, data } = await getProductByBarcode(normalizedBarCode);
-
+      console.log({ success, data });
       if (!success || !data) {
         throw new Error("Producto no encontrado");
       }

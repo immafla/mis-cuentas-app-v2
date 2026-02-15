@@ -149,9 +149,22 @@ const Table = ({
         flexWrap: "wrap",
         flexShrink: 0,
         ...(isMobile && {
-          flexDirection: "column",
-          alignItems: "stretch",
-          "& > *": {
+          "& > .MuiBox-root": {
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "stretch",
+            gap: 1,
+            width: "100%",
+            "& > *": {
+              width: "100%",
+              flex: "none",
+            },
+          },
+          "& .MuiCollapse-root, & .MuiCollapse-root .MuiCollapse-wrapper, & .MuiCollapse-root .MuiCollapse-wrapperInner":
+            {
+              width: "100%",
+            },
+          "& .MuiCollapse-root .MuiTextField-root": {
             width: "100%",
           },
         }),
@@ -219,7 +232,17 @@ const Table = ({
   });
 
   return (
-    <Box sx={{ width: "100%", maxWidth: "100%", minWidth: 0, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+    <Box
+      sx={{
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        flex: 1,
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <MaterialReactTable table={table} />
     </Box>
   );
