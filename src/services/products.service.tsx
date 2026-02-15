@@ -227,10 +227,15 @@ export async function getProductByBarcode(barCode: string) {
       };
     }
 
+    const normalizedProduct = {
+      ...product,
+      _id: String(product._id),
+    };
+
     return {
       success: true,
       message: "Product fetched successfully",
-      data: structuredClone(product),
+      data: structuredClone(normalizedProduct),
     };
   } catch (error) {
     console.error("Error fetching product by barcode:", error);
