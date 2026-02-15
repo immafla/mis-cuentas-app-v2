@@ -2,6 +2,7 @@
 
 import connectDB from "@/lib/mongodb";
 import Brand from "@/lib/models/Brand";
+import Product from "@/lib/models/Product";
 import { Types } from "mongoose";
 
 const normalizeBrand = (brand: { _id: unknown; name: string }) => ({
@@ -34,7 +35,26 @@ export async function createBrand(name: string) {
 export async function deleteBrandById(id: string) {
   try {
     await connectDB();
-    console.log({ id });
+
+    const brand = await Brand.findById(id).lean();
+    if (!brand) {
+      return {
+        success: false,
+        error: "Brand not found",
+        message: "No se encontró la marca.",
+      };
+    }
+
+    const associatedProducts = await Product.countDocuments({ brand: id });
+
+    if (associatedProducts > 0) {
+      return {
+        success: false,
+        error: "Brand has associated products",
+        message: `No se puede eliminar. Hay ${associatedProducts} producto(s) asociado(s) a esta marca.`,
+      };
+    }
+
     const deletedBrand = await Brand.findByIdAndDelete(id).lean();
 
     if (!deletedBrand) {

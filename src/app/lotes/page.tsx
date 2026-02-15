@@ -1,13 +1,15 @@
 "use client";
 
-import { Box, Container, Stack, Typography } from "@mui/material";
+import { alpha, Box, Container, Stack, Typography, useTheme } from "@mui/material";
 
 import CustomTable from "@/components/Table";
 import { lotsColumns } from "./columns";
 import { NewLotModal } from "./components/new-lot";
 import { useLots } from "./hooks/useLots";
+import { LotRow } from "@/services/lots.service";
 
 const LotesPage = () => {
+  const theme = useTheme();
   const {
     isLoading,
     createModalOpen,
@@ -55,6 +57,14 @@ const LotesPage = () => {
             showDeleteAction={true}
             actionsHeader="Eliminar lote"
             searchPlaceholder="Buscar lotes"
+            muiTableBodyRowProps={({ row }: { row: { original: LotRow } }) => ({
+              hover: false,
+              sx: {
+                bgcolor: row.original.isActive
+                  ? alpha(theme.palette.success.light, 0.15)
+                  : alpha(theme.palette.grey[500], 0.15),
+              },
+            })}
           />
 
           <NewLotModal

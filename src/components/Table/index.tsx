@@ -25,6 +25,7 @@ const Table = ({
   showDeleteAction = true,
   actionsHeader = "Acciones",
   searchPlaceholder = "Buscar",
+  muiTableBodyRowProps: customRowProps,
 }: {
   columns: any;
   tableData: any;
@@ -38,6 +39,7 @@ const Table = ({
   showDeleteAction?: boolean;
   actionsHeader?: string;
   searchPlaceholder?: string;
+  muiTableBodyRowProps?: any;
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -106,7 +108,7 @@ const Table = ({
 
   const table = useMaterialReactTable({
     positionActionsColumn: "last",
-    muiTableBodyRowProps: { hover: false },
+    muiTableBodyRowProps: customRowProps ?? { hover: false },
     enableDensityToggle: false,
     enableFullScreenToggle: false,
     enableHiding: false,

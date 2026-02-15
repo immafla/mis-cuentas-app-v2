@@ -1,6 +1,6 @@
 "use client";
 
-import { Box } from "@mui/material";
+import { Box, Chip, Typography, Stack } from "@mui/material";
 import { MRT_Cell, MRT_ColumnDef } from "material-react-table";
 
 import { LotRow } from "@/services/lots.service";
@@ -10,6 +10,25 @@ export const lotsColumns = (): MRT_ColumnDef<LotRow>[] => [
     accessorKey: "_id",
     header: "ID lote",
     size: 220,
+  },
+  {
+    accessorKey: "isActive",
+    header: "Estado",
+    size: 100,
+    Cell: ({ row }) => {
+      const active = row.original.isActive;
+      return (
+        <Chip
+          label={active ? "Activo" : "Inactivo"}
+          size="small"
+          sx={{
+            fontWeight: 600,
+            bgcolor: active ? "success.light" : "grey.400",
+            color: active ? "success.contrastText" : "common.white",
+          }}
+        />
+      );
+    },
   },
   {
     accessorKey: "receivedAt",
@@ -38,7 +57,25 @@ export const lotsColumns = (): MRT_ColumnDef<LotRow>[] => [
   {
     accessorKey: "productsSummary",
     header: "Detalle",
-    size: 260,
+    size: 340,
+    Cell: ({ row }) => {
+      const details = row.original.productsDetails;
+      if (!details?.length) return null;
+      return (
+        <Stack spacing={0.5}>
+          {details.map((item, i) => (
+            <Box key={i}>
+              <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.3 }}>
+                {item.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {`Restantes: ${item.remainingQuantity} · Compra: $ ${item.purchasePrice.toLocaleString("es-CO")}`}
+              </Typography>
+            </Box>
+          ))}
+        </Stack>
+      );
+    },
   },
   {
     accessorKey: "totalQuantity",

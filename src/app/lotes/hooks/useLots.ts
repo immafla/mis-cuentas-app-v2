@@ -100,10 +100,19 @@ export const useLots = () => {
 
   const handleDeleteLot = useCallback(
     async (row: MRT_Row<LotRow>) => {
+      if (row.original.isActive) {
+        await MySwal.fire({
+          icon: "warning",
+          title: "No se puede eliminar",
+          text: "Este lote aún tiene productos restantes. Solo puedes eliminar lotes inactivos.",
+        });
+        return;
+      }
+
       const confirmDelete = await MySwal.fire({
         icon: "warning",
         title: "¿Eliminar lote?",
-        text: "Se descontará del inventario la cantidad asociada al lote.",
+        text: "Se eliminará el registro del lote.",
         showCancelButton: true,
         confirmButtonText: "Sí, eliminar",
         cancelButtonText: "Cancelar",
