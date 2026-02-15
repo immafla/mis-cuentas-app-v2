@@ -38,15 +38,14 @@ const Dashboard = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        backgroundSize: "100% 100%",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundBlendMode: "screen",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "auto",
       }}
     >
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Stack spacing={3}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3 } }}>
+        <Stack spacing={{ xs: 2, sm: 3 }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
               Información de ventas
@@ -55,7 +54,7 @@ const Dashboard = () => {
           </Box>
 
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
               <Paper elevation={0} sx={glassCardSx}>
                 <Stack spacing={1}>
                   <Typography color="text.secondary" variant="subtitle2">
@@ -70,7 +69,7 @@ const Dashboard = () => {
                 </Stack>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
               <Paper elevation={0} sx={glassCardSx}>
                 <Stack spacing={1}>
                   <Typography color="text.secondary" variant="subtitle2">
@@ -83,7 +82,7 @@ const Dashboard = () => {
                 </Stack>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
               <Paper elevation={0} sx={glassCardSx}>
                 <Stack spacing={1}>
                   <Typography color="text.secondary" variant="subtitle2">
@@ -96,7 +95,7 @@ const Dashboard = () => {
                 </Stack>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
               <Paper elevation={0} sx={glassCardSx}>
                 <Stack spacing={1}>
                   <Typography color="text.secondary" variant="subtitle2">
@@ -112,10 +111,10 @@ const Dashboard = () => {
           </Grid>
 
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Paper elevation={0} sx={glassCardSx}>
-                <Stack spacing={2}>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Grid size={{ xs: 12, lg: 8 }}>
+              <Paper elevation={0} sx={{ ...glassCardSx, display: "flex", flexDirection: "column", maxHeight: { xs: 400, sm: 450, lg: "none" } }}>
+                <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ flexShrink: 0 }}>
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
                       Ventas recientes
                     </Typography>
@@ -127,42 +126,44 @@ const Dashboard = () => {
                       <CircularProgress size={28} />
                     </Stack>
                   ) : (
-                    <List disablePadding>
-                      {recentSales.length === 0 && (
-                        <ListItem sx={{ px: 0 }}>
-                          <ListItemText
-                            primary="Sin ventas registradas"
-                            secondary="Cuando se registren ventas aparecerán aquí"
-                          />
-                        </ListItem>
-                      )}
-                      {recentSales.map((sale, index) => (
-                        <Box key={sale.id}>
-                          <ListItem disablePadding>
-                            <ListItemButton
-                              onClick={() => handleOpenSaleDetail(sale)}
-                              sx={{
-                                px: 2,
-                                borderRadius: 1,
-                                "&:hover": { backgroundColor: "action.hover" },
-                              }}
-                            >
-                              <ListItemText
-                                primary={sale.customer}
-                                secondary={`${sale.items} items · ${new Date(sale.soldAt).toLocaleString("es-CO")} · Haz click para ver detalle`}
-                              />
-                              <Typography sx={{ fontWeight: 600 }}>{`$ ${sale.total}`}</Typography>
-                            </ListItemButton>
+                    <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+                      <List disablePadding>
+                        {recentSales.length === 0 && (
+                          <ListItem sx={{ px: 0 }}>
+                            <ListItemText
+                              primary="Sin ventas registradas"
+                              secondary="Cuando se registren ventas aparecerán aquí"
+                            />
                           </ListItem>
-                          {index < recentSales.length - 1 && <Divider />}
-                        </Box>
-                      ))}
-                    </List>
+                        )}
+                        {recentSales.map((sale, index) => (
+                          <Box key={sale.id}>
+                            <ListItem disablePadding>
+                              <ListItemButton
+                                onClick={() => handleOpenSaleDetail(sale)}
+                                sx={{
+                                  px: 2,
+                                  borderRadius: 1,
+                                  "&:hover": { backgroundColor: "action.hover" },
+                                }}
+                              >
+                                <ListItemText
+                                  primary={sale.customer}
+                                  secondary={`${sale.items} items · ${new Date(sale.soldAt).toLocaleString("es-CO")} · Haz click para ver detalle`}
+                                />
+                                <Typography sx={{ fontWeight: 600 }}>{`$ ${sale.total}`}</Typography>
+                              </ListItemButton>
+                            </ListItem>
+                            {index < recentSales.length - 1 && <Divider />}
+                          </Box>
+                        ))}
+                      </List>
+                    </Box>
                   )}
                 </Stack>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, lg: 4 }}>
               <Paper elevation={0} sx={glassCardSx}>
                 <Stack spacing={2}>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>

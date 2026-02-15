@@ -92,7 +92,8 @@ const LoginPage = () => {
           justifyContent: "center",
           px: isMobile ? 2 : 6,
           py: isMobile ? 0 : 6,
-          bgcolor: "background.default",
+          bgcolor: "common.white",
+          color: "common.black",
         }}
       >
         <Box sx={{ width: "100%", maxWidth: 360 }}>
@@ -113,7 +114,7 @@ const LoginPage = () => {
               >
                 <StorefrontIcon sx={{ fontSize: 36 }} />
               </Box>
-              <Typography variant="h5" fontWeight={800} color="text.primary">
+              <Typography variant="h5" fontWeight={800} color="common.black">
                 Mis Cuentas
               </Typography>
             </Stack>
@@ -122,15 +123,15 @@ const LoginPage = () => {
           <Box>
             <Stack spacing={3}>
               <Box>
-                <Typography variant="h5" fontWeight={700}>
+                <Typography variant="h5" fontWeight={700} color="common.black">
                   Iniciar sesión
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                <Typography variant="body2" sx={{ mt: 0.5, color: "grey.600" }}>
                   Accede a tu panel de administración
                 </Typography>
               </Box>
 
-              <Divider />
+              <Divider sx={{ borderColor: "grey.200" }} />
 
               <Button
                 variant="contained"
@@ -149,7 +150,7 @@ const LoginPage = () => {
                 Continuar con Google
               </Button>
 
-              <Typography variant="caption" color="text.disabled" textAlign="center">
+              <Typography variant="caption" sx={{ color: "grey.500" }} textAlign="center">
                 Solo cuentas autorizadas pueden acceder al sistema.
               </Typography>
             </Stack>
@@ -157,7 +158,7 @@ const LoginPage = () => {
 
           <Typography
             variant="caption"
-            color="text.disabled"
+            sx={{ color: "grey.400" }}
             textAlign="center"
             display="block"
             sx={{ mt: 4 }}
