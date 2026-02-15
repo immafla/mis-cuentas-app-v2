@@ -158,10 +158,9 @@ const LoginPage = () => {
 
           <Typography
             variant="caption"
-            sx={{ color: "grey.400" }}
             textAlign="center"
             display="block"
-            sx={{ mt: 4 }}
+            sx={{ color: "grey.400", mt: 4 }}
           >
             Mis Cuentas &middot; Software de gestión para tu negocio
           </Typography>
