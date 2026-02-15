@@ -1,6 +1,8 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
+const ALLOWED_EMAILS = new Set(["mauroms1991@gmail.com", "adrisalv814@gmail.com"]);
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -8,6 +10,13 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     }),
   ],
+  callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== "google") return false;
+      const email = user?.email?.toLowerCase().trim();
+      return !!email && ALLOWED_EMAILS.has(email);
+    },
+  },
   session: {
     strategy: "jwt",
   },
