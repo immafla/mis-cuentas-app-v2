@@ -7,6 +7,11 @@ import { LotRow } from "@/services/lots.service";
 
 export const lotsColumns = (): MRT_ColumnDef<LotRow>[] => [
   {
+    accessorKey: "_id",
+    header: "ID lote",
+    size: 220,
+  },
+  {
     accessorKey: "receivedAt",
     header: "Fecha ingreso",
     size: 120,

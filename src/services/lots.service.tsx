@@ -40,6 +40,7 @@ type LotPopulateShape = {
       bar_code?: string;
     };
     quantity?: number;
+    remainingQuantity?: number;
     purchasePrice?: number;
     totalCost?: number;
   }>;
@@ -172,6 +173,7 @@ export async function createLot(input: CreateLotInput) {
     const lotItems = normalizedItems.map((item) => ({
       product: new Types.ObjectId(item.productId),
       quantity: item.quantity,
+      remainingQuantity: item.quantity,
       purchasePrice: item.purchasePrice,
       totalCost: item.quantity * item.purchasePrice,
     }));
@@ -226,6 +228,92 @@ export async function createLot(input: CreateLotInput) {
     return {
       success: false,
       error: "Failed to create lot",
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+export async function deleteLotById(id: string) {
+  try {
+    await connectDB();
+
+    if (!Types.ObjectId.isValid(id)) {
+      return {
+        success: false,
+        error: "Invalid lot id",
+        message: "El id del lote no es válido.",
+      };
+    }
+
+    const lot = await Lot.findById(id).lean();
+
+    if (!lot) {
+      return {
+        success: false,
+        error: "Lot not found",
+        message: "No se encontró el lote.",
+      };
+    }
+
+    const quantityByProduct = new Map<string, number>();
+
+    (Array.isArray(lot.items) ? lot.items : []).forEach((item) => {
+      const productId = String(item.product ?? "").trim();
+      const quantity = Math.max(
+        0,
+        Math.floor(Number(item.remainingQuantity ?? item.quantity ?? 0)),
+      );
+
+      if (!productId || quantity <= 0) {
+        return;
+      }
+
+      quantityByProduct.set(productId, (quantityByProduct.get(productId) ?? 0) + quantity);
+    });
+
+    const productIds = Array.from(quantityByProduct.keys());
+
+    if (productIds.length > 0) {
+      const products = await Product.find({ _id: { $in: productIds } })
+        .select("_id amount")
+        .lean();
+
+      const amountByProductId = new Map(
+        products.map((product) => [String(product._id), Number(product.amount ?? 0)]),
+      );
+
+      const operations = productIds
+        .filter((productId) => amountByProductId.has(productId))
+        .map((productId) => {
+          const currentAmount = amountByProductId.get(productId) ?? 0;
+          const quantityToRollback = quantityByProduct.get(productId) ?? 0;
+          const nextAmount = Math.max(currentAmount - quantityToRollback, 0);
+
+          return {
+            updateOne: {
+              filter: { _id: productId },
+              update: { $set: { amount: nextAmount } },
+            },
+          };
+        });
+
+      if (operations.length > 0) {
+        await Product.bulkWrite(operations, { ordered: true });
+      }
+    }
+
+    await Lot.findByIdAndDelete(id).lean();
+
+    return {
+      success: true,
+      message: "Lote eliminado correctamente",
+      data: { _id: id },
+    };
+  } catch (error) {
+    console.error("Error deleting lot:", error);
+    return {
+      success: false,
+      error: "Failed to delete lot",
       message: error instanceof Error ? error.message : "Unknown error",
     };
   }

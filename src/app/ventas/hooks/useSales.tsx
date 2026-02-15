@@ -302,6 +302,23 @@ export const useSales = () => {
     );
   }, []);
 
+  const handleSetProductPrice = useCallback((id: string, price: number) => {
+    setListSelectedProducts((prevState) =>
+      prevState.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+
+        const normalizedPrice = Number.isFinite(price) ? Math.max(price, 0) : 0;
+
+        return {
+          ...item,
+          price: normalizedPrice,
+        };
+      }),
+    );
+  }, []);
+
   const clearStockWarning = useCallback(() => {
     setStockWarning(null);
   }, []);
@@ -332,42 +349,8 @@ export const useSales = () => {
           quantity,
         }));
 
-      const updates = Array.from(
-        listSelectedProducts.reduce((accumulator, item) => {
-          const normalizedId = normalizeMongoId(item.id);
-          if (!normalizedId) {
-            return accumulator;
-          }
-
-          const previousQuantity = accumulator.get(normalizedId) ?? 0;
-          accumulator.set(normalizedId, previousQuantity + Number(item.quantity ?? 0));
-          return accumulator;
-        }, new Map<string, number>()),
-      ).map(([id, quantity]) => ({ id, quantity }));
-
-      if (!updates.length || !soldItems.length) {
+      if (!soldItems.length) {
         throw new Error("No hay productos válidos para procesar la venta");
-      }
-
-      const response = await fetch("/api/products/amount", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ updates }),
-      });
-
-      if (!response.ok) {
-        throw new Error("No se pudo actualizar el stock en la base de datos");
-      }
-
-      const result = (await response.json()) as {
-        success?: boolean;
-        message?: string;
-      };
-
-      if (!result?.success) {
-        throw new Error(result?.message ?? "Error actualizando stock");
       }
 
       const saleResult = await createSaleRecord(soldItems);
@@ -498,6 +481,7 @@ export const useSales = () => {
     handleRemoveOneProduct,
     handleIncreaseProductQuantity,
     handleSetProductQuantity,
+    handleSetProductPrice,
     handleRemoveAllProduct,
     handlePay,
   };

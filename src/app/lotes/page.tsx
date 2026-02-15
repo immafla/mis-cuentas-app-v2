@@ -16,6 +16,7 @@ const LotesPage = () => {
     productOptions,
     setCreateModalOpen,
     handleCreateLot,
+    handleDeleteLot,
   } = useLots();
 
   return (
@@ -27,7 +28,11 @@ const LotesPage = () => {
         overflow: "hidden",
       }}
     >
-      <Container maxWidth={false} disableGutters sx={{ py: 0, px: 0, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <Container
+        maxWidth={false}
+        disableGutters
+        sx={{ py: 0, px: 0, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}
+      >
         <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
@@ -44,11 +49,11 @@ const LotesPage = () => {
             isLoading={isLoading}
             handleSaveRowEdits={async () => undefined}
             handleCancelRowEdits={() => undefined}
-            handleDeleteRow={async () => undefined}
+            handleDeleteRow={handleDeleteLot}
             setCreateModalOpen={setCreateModalOpen}
             showEditAction={false}
-            showDeleteAction={false}
-            actionsHeader=""
+            showDeleteAction={true}
+            actionsHeader="Eliminar lote"
             searchPlaceholder="Buscar lotes"
           />
 

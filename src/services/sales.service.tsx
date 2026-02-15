@@ -1,6 +1,8 @@
 "use server";
 
 import connectDB from "@/lib/mongodb";
+import Lot from "@/lib/models/Lot";
+import Product from "@/lib/models/Product";
 import Sale from "@/lib/models/Sale";
 import { Types } from "mongoose";
 
@@ -53,8 +55,97 @@ type SaleHistoryRow = {
   _id: string;
   soldAt: string;
   total: number;
+  profit: number;
   totalItems: number;
   products: string;
+};
+
+type LotAllocation = {
+  lotId: string;
+  quantity: number;
+  unitCost: number;
+};
+
+const consumeProductFromLots = (
+  item: {
+    productId: string;
+    name: string;
+    barCode: string;
+    quantity: number;
+    unitPrice: number;
+  },
+  lotDocs: Array<{
+    _id: unknown;
+    items: Array<{
+      product: unknown;
+      quantity?: number;
+      remainingQuantity?: number;
+      purchasePrice?: number;
+    }>;
+  }>,
+) => {
+  let quantityPending = item.quantity;
+  let lineCost = 0;
+  const lotAllocations: LotAllocation[] = [];
+
+  for (const lotDoc of lotDocs) {
+    if (quantityPending <= 0) {
+      break;
+    }
+
+    for (const lotItem of lotDoc.items) {
+      if (quantityPending <= 0) {
+        break;
+      }
+
+      const isSameProduct = String(lotItem.product) === item.productId;
+      if (!isSameProduct) {
+        continue;
+      }
+
+      const available = Math.max(
+        0,
+        Math.floor(Number(lotItem.remainingQuantity ?? lotItem.quantity ?? 0)),
+      );
+
+      if (available <= 0) {
+        continue;
+      }
+
+      const consumeQuantity = Math.min(quantityPending, available);
+      const unitCost = Number(lotItem.purchasePrice ?? 0);
+
+      lotItem.remainingQuantity = available - consumeQuantity;
+      quantityPending -= consumeQuantity;
+      lineCost += consumeQuantity * unitCost;
+      lotAllocations.push({
+        lotId: String(lotDoc._id),
+        quantity: consumeQuantity,
+        unitCost,
+      });
+    }
+  }
+
+  if (quantityPending > 0) {
+    throw new Error(`Stock por lote insuficiente para ${item.name || item.productId}`);
+  }
+
+  const unitCost = item.quantity > 0 ? lineCost / item.quantity : 0;
+  const lineTotal = item.quantity * item.unitPrice;
+  const lineProfit = lineTotal - lineCost;
+
+  return {
+    productId: item.productId,
+    name: item.name,
+    barCode: item.barCode,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    unitCost,
+    lineTotal,
+    lineCost,
+    lineProfit,
+    lotAllocations,
+  };
 };
 
 const BOGOTA_UTC_OFFSET_HOURS = -5;
@@ -85,31 +176,113 @@ export async function createSaleRecord(items: SaleInputItem[]) {
       };
     }
 
-    const normalizedItems = items.map((item) => {
-      const quantity = Math.max(1, Number(item.quantity ?? 1));
-      const unitPrice = Number(item.price ?? 0);
-      const unitCost = Number(Number.isFinite(Number(item.purchasePrice)) ? item.purchasePrice : 0);
-      const lineTotal = quantity * unitPrice;
-      const lineCost = quantity * unitCost;
-      const lineProfit = lineTotal - lineCost;
+    const groupedByProduct = items.reduce(
+      (accumulator, item) => {
+        const productId = String(item.id ?? "").trim();
 
+        if (!Types.ObjectId.isValid(productId)) {
+          return accumulator;
+        }
+
+        const quantity = Math.max(1, Math.floor(Number(item.quantity ?? 1)));
+        const unitPrice = Number(item.price ?? 0);
+
+        const previous = accumulator.get(productId);
+        if (!previous) {
+          accumulator.set(productId, {
+            productId,
+            name: String(item.name ?? ""),
+            barCode: String(item.barCode ?? ""),
+            quantity,
+            unitPrice,
+          });
+          return accumulator;
+        }
+
+        previous.quantity += quantity;
+        previous.unitPrice = unitPrice;
+        if (!previous.name) {
+          previous.name = String(item.name ?? "");
+        }
+        if (!previous.barCode) {
+          previous.barCode = String(item.barCode ?? "");
+        }
+        return accumulator;
+      },
+      new Map<
+        string,
+        {
+          productId: string;
+          name: string;
+          barCode: string;
+          quantity: number;
+          unitPrice: number;
+        }
+      >(),
+    );
+
+    const groupedItems = Array.from(groupedByProduct.values());
+
+    if (!groupedItems.length) {
       return {
-        productId: String(item.id),
-        name: String(item.name),
-        barCode: String(item.barCode),
-        quantity,
-        unitPrice,
-        unitCost,
-        lineTotal,
-        lineCost,
-        lineProfit,
+        success: false,
+        error: "Invalid sale items",
+        message: "No hay productos válidos para registrar la venta.",
       };
+    }
+
+    const productIds = groupedItems.map((item) => item.productId);
+
+    const productDocs = await Product.find({ _id: { $in: productIds } }).select("_id amount");
+    const productDocById = new Map(productDocs.map((doc) => [String(doc._id), doc]));
+
+    const missingProduct = productIds.find((productId) => !productDocById.has(productId));
+    if (missingProduct) {
+      return {
+        success: false,
+        error: "Product not found",
+        message: "Uno o más productos no existen.",
+      };
+    }
+
+    const hasInsufficientStock = groupedItems.some((item) => {
+      const productDoc = productDocById.get(item.productId);
+      const currentAmount = Number(productDoc?.amount ?? 0);
+      return currentAmount < item.quantity;
     });
+
+    if (hasInsufficientStock) {
+      return {
+        success: false,
+        error: "Insufficient stock",
+        message: "Stock insuficiente para completar la venta.",
+      };
+    }
+
+    const lotDocs = await Lot.find({
+      "items.product": { $in: productIds },
+    }).sort({ receivedAt: 1, _id: 1 });
+
+    const normalizedItems = groupedItems.map((item) => consumeProductFromLots(item, lotDocs));
 
     const total = normalizedItems.reduce((sum, item) => sum + item.lineTotal, 0);
     const totalCost = normalizedItems.reduce((sum, item) => sum + item.lineCost, 0);
     const totalProfit = normalizedItems.reduce((sum, item) => sum + item.lineProfit, 0);
     const totalItems = normalizedItems.reduce((sum, item) => sum + item.quantity, 0);
+
+    groupedItems.forEach((item) => {
+      const productDoc = productDocById.get(item.productId);
+
+      if (!productDoc) {
+        return;
+      }
+
+      const currentAmount = Number(productDoc.amount ?? 0);
+      productDoc.amount = Math.max(currentAmount - item.quantity, 0);
+    });
+
+    await Promise.all(lotDocs.map((lotDoc) => lotDoc.save()));
+    await Promise.all(productDocs.map((productDoc) => productDoc.save()));
 
     const sale = await Sale.create({
       items: normalizedItems,
@@ -275,6 +448,7 @@ export async function getSalesHistory(limit = 200) {
       _id: String(sale._id),
       soldAt: new Date(sale.soldAt).toISOString(),
       total: Number(sale.total ?? 0),
+      profit: Number(sale.totalProfit ?? 0),
       totalItems: Number(sale.totalItems ?? 0),
       products: Array.isArray(sale.items)
         ? (sale.items as SaleItemSummary[])

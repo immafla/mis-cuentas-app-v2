@@ -15,6 +15,7 @@ type SaleHistoryRow = {
   _id: string;
   soldAt: string;
   total: number;
+  profit: number;
   totalItems: number;
   products: string;
 };
@@ -46,9 +47,17 @@ export default function HistorialVentasPage() {
         Cell: ({ cell }) => new Date(String(cell.getValue())).toLocaleString("es-CO"),
       },
       {
-        accessorKey: "products",
+        accessorFn: (row) =>
+          String(row.products)
+            .split(" · ")
+            .map((product) => `• ${product.trim()}`)
+            .join("\n"),
+        id: "products",
         header: "Productos vendidos",
         size: 360,
+        muiTableBodyCellProps: {
+          sx: { whiteSpace: "pre-line" },
+        },
       },
       {
         accessorKey: "totalItems",
@@ -58,6 +67,12 @@ export default function HistorialVentasPage() {
       {
         accessorKey: "total",
         header: "Total",
+        size: 120,
+        Cell: ({ cell }) => `$ ${Number(cell.getValue() ?? 0).toLocaleString("es-CO")}`,
+      },
+      {
+        accessorKey: "profit",
+        header: "Ganancia",
         size: 120,
         Cell: ({ cell }) => `$ ${Number(cell.getValue() ?? 0).toLocaleString("es-CO")}`,
       },
@@ -109,7 +124,11 @@ export default function HistorialVentasPage() {
         overflow: "hidden",
       }}
     >
-      <Container maxWidth={false} disableGutters sx={{ py: 0, px: 0, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <Container
+        maxWidth={false}
+        disableGutters
+        sx={{ py: 0, px: 0, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}
+      >
         <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700 }}>

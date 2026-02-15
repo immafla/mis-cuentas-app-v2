@@ -10,6 +10,11 @@ export interface ISaleItem {
   lineTotal: number;
   lineCost: number;
   lineProfit: number;
+  lotAllocations: Array<{
+    lotId: string;
+    quantity: number;
+    unitCost: number;
+  }>;
 }
 
 export interface ISale extends Document {
@@ -32,6 +37,18 @@ const SaleItemSchema = new Schema<ISaleItem>(
     lineTotal: { type: Number, required: true },
     lineCost: { type: Number, required: true },
     lineProfit: { type: Number, required: true },
+    lotAllocations: {
+      type: [
+        {
+          lotId: { type: String, required: true },
+          quantity: { type: Number, required: true },
+          unitCost: { type: Number, required: true },
+          _id: false,
+        },
+      ],
+      required: true,
+      default: [],
+    },
   },
   { _id: false },
 );

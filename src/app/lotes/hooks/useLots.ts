@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import { MRT_Row } from "material-react-table";
 
 import { ApiService } from "@/services/api.service";
-import { createLot, getAllLots, LotRow } from "@/services/lots.service";
+import { createLot, deleteLotById, getAllLots, LotRow } from "@/services/lots.service";
 import { getAllSuppliers, SupplierRow } from "@/services/suppliers.service";
 
 const MySwal = withReactContent(Swal);
@@ -97,6 +98,49 @@ export const useLots = () => {
     [loadData],
   );
 
+  const handleDeleteLot = useCallback(
+    async (row: MRT_Row<LotRow>) => {
+      const confirmDelete = await MySwal.fire({
+        icon: "warning",
+        title: "¿Eliminar lote?",
+        text: "Se descontará del inventario la cantidad asociada al lote.",
+        showCancelButton: true,
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#d33",
+      });
+
+      if (!confirmDelete.isConfirmed) {
+        return;
+      }
+
+      const result = await deleteLotById(row.original._id);
+
+      if (!result.success) {
+        await MySwal.fire({
+          icon: "error",
+          title: "Error al eliminar",
+          text: result.message ?? result.error ?? "No fue posible eliminar el lote.",
+        });
+        return;
+      }
+
+      setLots((prev) => prev.filter((lot) => lot._id !== row.original._id));
+
+      void loadData().catch((error) => {
+        console.error("Error recargando lotes tras eliminar", error);
+      });
+
+      await MySwal.fire({
+        icon: "success",
+        title: "Lote eliminado",
+        timer: 1300,
+        showConfirmButton: false,
+      });
+    },
+    [loadData],
+  );
+
   return {
     isLoading,
     createModalOpen,
@@ -105,5 +149,6 @@ export const useLots = () => {
     productOptions,
     setCreateModalOpen,
     handleCreateLot,
+    handleDeleteLot,
   };
 };

@@ -47,6 +47,7 @@ const NewSale = () => {
     handleRemoveOneProduct,
     handleIncreaseProductQuantity,
     handleSetProductQuantity,
+    handleSetProductPrice,
     handlePay,
   } = useSales();
 
@@ -205,6 +206,9 @@ const NewSale = () => {
                               {`Cantidad: ${element.quantity}`}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
+                              {`Precio venta unidad: $ ${Number(element.price ?? 0).toLocaleString("es-CO")}`}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
                               {`Stock: ${element.amount}`}
                             </Typography>
                           </>
@@ -222,7 +226,37 @@ const NewSale = () => {
                         <Typography variant="h6" component="div" sx={{ lineHeight: 1.2 }}>
                           {`$ ${element.price * element.quantity}`}
                         </Typography>
-                        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+                        <TextField
+                          size="small"
+                          type="number"
+                          label="Precio venta"
+                          value={element.price}
+                          onChange={(event) =>
+                            handleSetProductPrice(element.id, Number(event.target.value))
+                          }
+                          inputProps={{
+                            min: 0,
+                            step: "0.01",
+                            style: {
+                              width: 92,
+                              textAlign: "center",
+                              padding: "4px 6px",
+                            },
+                          }}
+                          sx={{
+                            width: { xs: 120, sm: 140 },
+                            "& .MuiInputBase-root": {
+                              height: { xs: 28, sm: 32 },
+                            },
+                            "& .MuiInputBase-input": {
+                              fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                            },
+                          }}
+                        />
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                            Cant.
+                          </Typography>
                           <Button
                             size="small"
                             variant="outlined"

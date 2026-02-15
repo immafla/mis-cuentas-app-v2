@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface ILotItem {
   product: mongoose.Types.ObjectId;
   quantity: number;
+  remainingQuantity: number;
   purchasePrice: number;
   totalCost: number;
 }
@@ -19,6 +20,7 @@ const LotItemSchema = new Schema<ILotItem>(
   {
     product: { type: Schema.Types.ObjectId, ref: "Product", required: true },
     quantity: { type: Number, required: true },
+    remainingQuantity: { type: Number, required: true },
     purchasePrice: { type: Number, required: true },
     totalCost: { type: Number, required: true },
   },
