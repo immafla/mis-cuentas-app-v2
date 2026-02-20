@@ -52,14 +52,26 @@ export const productColumns = (
       accessorKey: "category",
       header: "Categoria",
       size: 40,
+      enableGrouping: true,
+      enableEditing: true,
       muiEditTextFieldProps: {
         variant: "outlined",
-        select: true, //change to select for a dropdown
+        select: true,
         children: categories.map((category) => (
           <MenuItem key={category._id} value={category.name}>
             {category.name}
           </MenuItem>
         )),
+      },
+      Cell: ({ cell }: { cell: any }) => {
+        const categoryValue = cell.getValue();
+        // Si es un ID (24 caracteres hex), buscar el nombre
+        if (typeof categoryValue === "string" && categoryValue.length === 24) {
+          const category = categories.find((cat) => cat._id === categoryValue);
+          return <Box>{category?.name ?? categoryValue}</Box>;
+        }
+        // Si ya es un nombre, mostrarlo directamente
+        return <Box>{categoryValue}</Box>;
       },
     },
     {

@@ -277,7 +277,7 @@ export const useInventory = () => {
       try {
         const [brandsResponse, categoriesResponse] = await Promise.all([
           apiService.getAllBrands(),
-          apiService.getAllBussinesCategory(),
+          apiService.getAllCategories(),
         ]);
         const [brandList, categoryList] = await Promise.all([
           brandsResponse.json(),

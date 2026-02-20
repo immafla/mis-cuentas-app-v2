@@ -125,7 +125,7 @@ export const useNewProductModal = ({
       try {
         const [brandsResponse, categoriesResponse] = await Promise.all([
           apiService.getAllBrands(),
-          apiService.getAllBussinesCategory(),
+          apiService.getAllCategories(),
         ]);
 
         const [brandsData, categoriesData] = await Promise.all([

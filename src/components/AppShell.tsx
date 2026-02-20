@@ -25,6 +25,7 @@ const AppShell = ({ children }: AppShellProps) => {
       showSale={navigate("/ventas")}
       showSalesHistory={navigate("/historial-ventas")}
       showAddBrand={navigate("/marcas")}
+      showCategories={navigate("/categorias")}
       showSuppliers={navigate("/proveedores")}
     >
       {children}

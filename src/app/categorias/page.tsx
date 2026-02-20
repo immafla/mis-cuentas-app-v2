@@ -1,24 +1,22 @@
 "use client";
 
-import React from "react";
 import { Box, Container, Stack, Typography } from "@mui/material";
 import CustomTable from "@/components/Table";
+import { NewCategoryModal } from "./components/new-category";
+import { useCategories } from "./hooks/useCategories";
 
-import { NewProductModal } from "./components/new-product";
-import { useInventory } from "./hooks/useInventory";
-
-export default function InventarioPage() {
+const CategoriasPage = () => {
   const {
     columns,
-    createModalOpen,
-    handleCancelRowEdits,
-    handleCreateNewRow,
-    handleDeleteRow,
-    handleSaveRowEdits,
-    isLoading,
-    setCreateModalOpen,
     tableData,
-  } = useInventory();
+    isLoading,
+    createModalOpen,
+    setCreateModalOpen,
+    handleSaveRowEdits,
+    handleCancelRowEdits,
+    handleDeleteRow,
+    handleCreateCategory,
+  } = useCategories();
 
   return (
     <Box
@@ -37,10 +35,11 @@ export default function InventarioPage() {
         <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
-              Inventario
+              Categorías
             </Typography>
-            <Typography color="text.secondary">Gestiona productos y existencias.</Typography>
+            <Typography color="text.secondary">Gestiona las categorías de productos.</Typography>
           </Box>
+
           <CustomTable
             columns={columns}
             tableData={tableData}
@@ -49,21 +48,17 @@ export default function InventarioPage() {
             handleCancelRowEdits={handleCancelRowEdits}
             handleDeleteRow={handleDeleteRow}
             setCreateModalOpen={setCreateModalOpen}
-            enableGrouping={true}
-            groupedColumnMode="remove"
-            initialGrouping={["category"]}
           />
-          {createModalOpen && (
-            <NewProductModal
-              columns={columns}
-              open={createModalOpen}
-              onClose={() => setCreateModalOpen(false)}
-              onSubmit={handleCreateNewRow}
-              existingProductNames={tableData.map((product) => product.name)}
-            />
-          )}
+
+          <NewCategoryModal
+            open={createModalOpen}
+            onClose={() => setCreateModalOpen(false)}
+            onSubmit={handleCreateCategory}
+          />
         </Stack>
       </Container>
     </Box>
   );
-}
+};
+
+export default CategoriasPage;

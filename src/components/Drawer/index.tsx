@@ -30,6 +30,7 @@ import HomeFilledIcon from "@mui/icons-material/HomeFilled";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
+import CategoryIcon from "@mui/icons-material/Category";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { signOut, useSession } from "next-auth/react";
 import { useColorMode } from "../ThemeRegistry";
@@ -91,6 +92,7 @@ type MiniDrawerProps = {
   showSalesHistory: () => void;
   showAddBrand: () => void;
   showSuppliers: () => void;
+  showCategories: () => void;
   children?: React.ReactNode;
 };
 
@@ -109,6 +111,7 @@ export const MiniDrawer = ({
   showSalesHistory,
   showAddBrand,
   showSuppliers,
+  showCategories,
   children,
 }: MiniDrawerProps) => {
   const theme = useTheme();
@@ -166,20 +169,27 @@ export const MiniDrawer = ({
         path: "/marcas",
       },
       {
+        label: "Categorías",
+        icon: <CategoryIcon />,
+        action: showCategories,
+        path: "/categorias",
+      },
+      {
         label: "Proveedores",
         icon: <LocalShippingIcon />,
         action: showSuppliers,
         path: "/proveedores",
       },
     ],
-    [showAddBrand, showLots, showProduct, showSuppliers],
+    [showAddBrand, showCategories, showLots, showProduct, showSuppliers],
   );
 
   const listItemButtonSx = React.useMemo(
     () => ({
-      minHeight: 48,
+      minHeight: 40,
       justifyContent: open ? "initial" : "center",
-      px: 2.5,
+      px: 1.5,
+      py: 0.5,
       borderRadius: 1,
       mx: 1,
       "&.Mui-selected": {

@@ -26,6 +26,9 @@ const Table = ({
   actionsHeader = "Acciones",
   searchPlaceholder = "Buscar",
   muiTableBodyRowProps: customRowProps,
+  enableGrouping = false,
+  groupedColumnMode,
+  initialGrouping,
 }: {
   columns: any;
   tableData: any;
@@ -40,6 +43,9 @@ const Table = ({
   actionsHeader?: string;
   searchPlaceholder?: string;
   muiTableBodyRowProps?: any;
+  enableGrouping?: boolean;
+  groupedColumnMode?: "reorder" | "remove" | false;
+  initialGrouping?: string[];
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -114,8 +120,14 @@ const Table = ({
     enableHiding: false,
     enableRowOrdering: false,
     enableColumnFilters: false,
-    enableSorting: false,
-    initialState: { density: "compact", showGlobalFilter: true },
+    enableSorting: true,
+    enableGrouping: enableGrouping,
+    groupedColumnMode: enableGrouping ? groupedColumnMode : undefined,
+    initialState: {
+      density: "compact",
+      showGlobalFilter: true,
+      ...(enableGrouping && initialGrouping ? { grouping: initialGrouping, expanded: true } : {}),
+    },
     editDisplayMode: "modal",
     localization: MRT_Localization_ES,
     columns,
