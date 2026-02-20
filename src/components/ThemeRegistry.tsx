@@ -32,7 +32,7 @@ export const useColorMode = () => {
 export default function ThemeRegistry({ children }: Readonly<{ children: ReactNode }>) {
   const [mode, setMode] = useState<PaletteMode>(() => {
     if (globalThis.window === undefined) {
-      return "light";
+      return "dark";
     }
 
     const storedMode = globalThis.localStorage?.getItem("theme-mode");
@@ -41,8 +41,7 @@ export default function ThemeRegistry({ children }: Readonly<{ children: ReactNo
       return storedMode;
     }
 
-    const prefersDark = globalThis.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
-    return prefersDark ? "dark" : "light";
+    return "dark";
   });
 
   const toggleColorMode = useCallback(() => {

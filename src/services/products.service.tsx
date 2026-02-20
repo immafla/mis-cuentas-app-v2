@@ -4,14 +4,16 @@ import connectDB from "@/lib/mongodb";
 import Product, { IProduct } from "@/lib/models/Product";
 import { Types } from "mongoose";
 
-type ProductUpdate = Partial<
-  Pick<IProduct, "name" | "brand" | "amount" | "category" | "sale_price" | "bar_code">
->;
+type ProductCreateInput = {
+  name: string;
+  brand: string;
+  amount: number;
+  category: string | Types.ObjectId;
+  sale_price: string;
+  bar_code: string;
+};
 
-type ProductCreateInput = Pick<
-  IProduct,
-  "name" | "brand" | "amount" | "category" | "sale_price" | "bar_code"
->;
+type ProductUpdate = Partial<ProductCreateInput>;
 
 const parseNumericInput = (value: unknown) => {
   if (typeof value !== "string" && typeof value !== "number") {
