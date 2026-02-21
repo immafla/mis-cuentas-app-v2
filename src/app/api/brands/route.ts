@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Brand from "@/lib/models/Brand";
 
+const normalizeName = (value: string) => value.trim().replaceAll(/\s+/g, " ").toUpperCase();
+
 export async function GET() {
   try {
     await connectDB();
@@ -17,7 +19,19 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
-    const newBrand = new Brand({ ...body, type: "brand" });
+
+    const normalizedName = normalizeName(String(body?.name ?? ""));
+
+    if (!normalizedName) {
+      return NextResponse.json({ error: "Brand name is required" }, { status: 400 });
+    }
+
+    const existingByName = await Brand.findOne({ name: normalizedName }).lean();
+    if (existingByName) {
+      return NextResponse.json({ error: "Brand already exists" }, { status: 409 });
+    }
+
+    const newBrand = new Brand({ ...body, name: normalizedName, type: "brand" });
     await newBrand.save();
     return NextResponse.json(newBrand, { status: 201 });
   } catch (error) {
