@@ -11,6 +11,7 @@ const normalizeBrand = (brand: { _id: unknown; name: string }) => ({
 });
 
 const normalizeName = (value: string) => value.trim().replaceAll(/\s+/g, " ").toUpperCase();
+const escapeRegex = (value: string) => value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
 export async function createBrand(name: string) {
   try {
@@ -66,7 +67,14 @@ export async function deleteBrandById(id: string) {
       };
     }
 
-    const associatedProducts = await Product.countDocuments({ brand: id });
+    const normalizedBrandName = normalizeName(String(brand.name ?? ""));
+    const associatedProducts = await Product.countDocuments({
+      $or: [
+        { brand: id },
+        { brand: normalizedBrandName },
+        { brand: { $regex: `^${escapeRegex(normalizedBrandName)}$`, $options: "i" } },
+      ],
+    });
 
     if (associatedProducts > 0) {
       return {

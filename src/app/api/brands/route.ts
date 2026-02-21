@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Brand from "@/lib/models/Brand";
+import Product from "@/lib/models/Product";
 
 const normalizeName = (value: string) => value.trim().replaceAll(/\s+/g, " ").toUpperCase();
+const escapeRegex = (value: string) => value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
 export async function GET() {
   try {
@@ -44,7 +46,37 @@ export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
-    const { id } = body; // Assuming body has id
+
+    const id = String(body?.id ?? "").trim();
+
+    if (!id) {
+      return NextResponse.json({ error: "Brand id is required" }, { status: 400 });
+    }
+
+    const brand = await Brand.findById(id).lean();
+    if (!brand) {
+      return NextResponse.json({ error: "Brand not found" }, { status: 404 });
+    }
+
+    const normalizedBrandName = normalizeName(String(brand.name ?? ""));
+    const associatedProducts = await Product.countDocuments({
+      $or: [
+        { brand: id },
+        { brand: normalizedBrandName },
+        { brand: { $regex: `^${escapeRegex(normalizedBrandName)}$`, $options: "i" } },
+      ],
+    });
+
+    if (associatedProducts > 0) {
+      return NextResponse.json(
+        {
+          error: "Brand has associated products",
+          message: `No se puede eliminar. Hay ${associatedProducts} producto(s) asociado(s) a esta marca.`,
+        },
+        { status: 409 },
+      );
+    }
+
     await Brand.findByIdAndDelete(id);
     return NextResponse.json({ message: "Brand deleted" });
   } catch (error) {
