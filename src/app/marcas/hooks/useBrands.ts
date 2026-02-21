@@ -197,6 +197,9 @@ export const useBrands = () => {
         icon: "error",
         title: "Error al crear",
         text: result.message ?? result.error ?? "No fue posible crear la marca.",
+        didOpen: (popup) => {
+          popup.parentElement?.style.setProperty("z-index", "1600");
+        },
       });
       return false;
     } catch (error) {
@@ -204,6 +207,9 @@ export const useBrands = () => {
         icon: "error",
         title: "Error al crear",
         text: error instanceof Error ? error.message : "No fue posible crear la marca.",
+        didOpen: (popup) => {
+          popup.parentElement?.style.setProperty("z-index", "1600");
+        },
       });
       return false;
     } finally {

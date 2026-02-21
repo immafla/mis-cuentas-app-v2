@@ -159,6 +159,9 @@ export const useCategories = () => {
         icon: "error",
         title: "Error al crear",
         text: result.message ?? result.error ?? "No fue posible crear la categoría.",
+        didOpen: (popup) => {
+          popup.parentElement?.style.setProperty("z-index", "1600");
+        },
       });
       return false;
     }
