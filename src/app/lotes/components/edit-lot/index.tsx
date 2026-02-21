@@ -13,11 +13,15 @@ import {
   Select,
   TextField,
 } from "@mui/material";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 import { Modal } from "@/components/Modal";
 import { SupplierRow } from "@/services/suppliers.service";
 import { LotRow } from "@/services/lots.service";
 import { NewLotValues, ProductOption } from "../../hooks/useLots";
+
+const MySwal = withReactContent(Swal);
 
 export const EditLotModal: FC<{
   open: boolean;
@@ -47,9 +51,25 @@ export const EditLotModal: FC<{
     purchasePrice: "",
   });
 
+  const buildSnapshot = (
+    snapshotReceivedAt: string,
+    snapshotSupplierId: string,
+    snapshotRows: RowState[],
+  ) =>
+    JSON.stringify({
+      receivedAt: snapshotReceivedAt,
+      supplierId: snapshotSupplierId,
+      rows: snapshotRows.map((row) => ({
+        productId: String(row.selectedProduct?._id ?? ""),
+        quantity: String(row.quantity ?? "").trim(),
+        purchasePrice: String(row.purchasePrice ?? "").trim(),
+      })),
+    });
+
   const [receivedAt, setReceivedAt] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [rows, setRows] = useState<RowState[]>([createRow()]);
+  const [initialSnapshot, setInitialSnapshot] = useState("");
   const [errors, setErrors] = useState<{
     receivedAt?: string;
     supplierId?: string;
@@ -60,10 +80,14 @@ export const EditLotModal: FC<{
   useEffect(() => {
     if (!lot || !open) return;
 
-    setReceivedAt(lot.receivedAt ? new Date(lot.receivedAt).toISOString().slice(0, 10) : "");
+    const nextReceivedAt = lot.receivedAt
+      ? new Date(lot.receivedAt).toISOString().slice(0, 10)
+      : "";
+    setReceivedAt(nextReceivedAt);
 
     const matchedSupplier = suppliers.find((s) => s.name === lot.supplierName);
-    setSupplierId(matchedSupplier?._id ?? "");
+    const nextSupplierId = matchedSupplier?._id ?? "";
+    setSupplierId(nextSupplierId);
 
     if (lot.productsDetails?.length) {
       const populatedRows: RowState[] = lot.productsDetails.map((detail) => {
@@ -77,9 +101,12 @@ export const EditLotModal: FC<{
       });
       setRows(populatedRows);
       setErrors({ rows: populatedRows.map(() => ({})) });
+      setInitialSnapshot(buildSnapshot(nextReceivedAt, nextSupplierId, populatedRows));
     } else {
-      setRows([createRow()]);
+      const emptyRows = [createRow()];
+      setRows(emptyRows);
       setErrors({ rows: [{}] });
+      setInitialSnapshot(buildSnapshot(nextReceivedAt, nextSupplierId, emptyRows));
     }
   }, [lot, open, suppliers, productOptions]);
 
@@ -87,6 +114,7 @@ export const EditLotModal: FC<{
     setReceivedAt("");
     setSupplierId("");
     setRows([createRow()]);
+    setInitialSnapshot("");
     setErrors({ rows: [{}] });
   };
 
@@ -104,6 +132,32 @@ export const EditLotModal: FC<{
         Number(row.purchasePrice) >= 0,
     );
   }, [receivedAt, rows, supplierId]);
+
+  const isFormDirty = useMemo(() => {
+    if (!open || !lot || !initialSnapshot) {
+      return false;
+    }
+
+    return buildSnapshot(receivedAt, supplierId, rows) !== initialSnapshot;
+  }, [initialSnapshot, lot, open, receivedAt, rows, supplierId]);
+
+  const handleAttemptClose = async () => {
+    if (!isFormDirty) {
+      return true;
+    }
+
+    const result = await MySwal.fire({
+      icon: "warning",
+      title: "Salir sin guardar",
+      text: "Tienes cambios sin guardar. ¿Realmente deseas salir?",
+      showCancelButton: true,
+      confirmButtonText: "Sí, salir",
+      cancelButtonText: "No, continuar",
+      confirmButtonColor: "#d33",
+    });
+
+    return result.isConfirmed;
+  };
 
   const handleAddProductRow = () => {
     setRows((prev) => [...prev, createRow()]);
@@ -125,13 +179,23 @@ export const EditLotModal: FC<{
     value: ProductOption | string | null,
   ) => {
     setRows((prev) =>
-      prev.map((row, i) => (i !== indexToUpdate ? row : { ...row, [key]: value })),
+      prev.map((row, i) => {
+        if (i === indexToUpdate) {
+          return { ...row, [key]: value };
+        }
+
+        return row;
+      }),
     );
     setErrors((prev) => ({
       ...prev,
-      rows: prev.rows.map((rowError, i) =>
-        i !== indexToUpdate ? rowError : { ...rowError, [key]: undefined },
-      ),
+      rows: prev.rows.map((rowError, i) => {
+        if (i === indexToUpdate) {
+          return { ...rowError, [key]: undefined };
+        }
+
+        return rowError;
+      }),
     }));
   };
 
@@ -183,7 +247,13 @@ export const EditLotModal: FC<{
   };
 
   return (
-    <Modal open={open} onClose={handleClose} onSubmit={handleSubmit} title="Editar lote">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      onAttemptClose={handleAttemptClose}
+      onSubmit={handleSubmit}
+      title="Editar lote"
+    >
       <>
         <TextField
           type="date"

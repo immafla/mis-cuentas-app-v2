@@ -1,6 +1,8 @@
 import React, { FC } from "react";
 import { Modal } from "@/components/Modal";
 import styles from "./styles.module.css";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 import {
   Autocomplete,
   FormHelperText,
@@ -14,12 +16,15 @@ import {
 import { NewProductModalProps } from "./types";
 import { useNewProductModal } from "./hooks/useNewProductModal";
 
+const MySwal = withReactContent(Swal);
+
 export const NewProductModal: FC<NewProductModalProps> = ({ columns, open, onClose, onSubmit }) => {
   const {
     brandList,
     bussinesCategoryList,
     brandSelected,
     categorySelected,
+    isFormDirty,
     values,
     errors,
     formColumns,
@@ -29,8 +34,32 @@ export const NewProductModal: FC<NewProductModalProps> = ({ columns, open, onClo
     handleCategoryChange,
   } = useNewProductModal({ columns, onSubmit });
 
+  const handleAttemptClose = async () => {
+    if (!isFormDirty) {
+      return true;
+    }
+
+    const result = await MySwal.fire({
+      icon: "warning",
+      title: "Salir sin guardar",
+      text: "Tienes cambios sin guardar. ¿Realmente deseas salir?",
+      showCancelButton: true,
+      confirmButtonText: "Sí, salir",
+      cancelButtonText: "No, continuar",
+      confirmButtonColor: "#d33",
+    });
+
+    return result.isConfirmed;
+  };
+
   return (
-    <Modal open={open} onClose={onClose} onSubmit={onSubmitModal} title="Crear nuevo producto">
+    <Modal
+      open={open}
+      onClose={onClose}
+      onAttemptClose={handleAttemptClose}
+      onSubmit={onSubmitModal}
+      title="Crear nuevo producto"
+    >
       <Box className={styles.container}>
         <Autocomplete
           options={bussinesCategoryList}

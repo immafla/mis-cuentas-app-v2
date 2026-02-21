@@ -1,7 +1,11 @@
 import React, { FC, useState } from "react";
 import { TextField } from "@mui/material";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 import { Modal } from "@/components/Modal";
+
+const MySwal = withReactContent(Swal);
 
 export const NewSupplierModal: FC<{
   open: boolean;
@@ -19,6 +23,28 @@ export const NewSupplierModal: FC<{
   const handleClose = () => {
     resetForm();
     onClose();
+  };
+
+  const handleAttemptClose = async () => {
+    const isFormDirty = Object.values(values).some(
+      (value) => String(value ?? "").trim().length > 0,
+    );
+
+    if (!isFormDirty) {
+      return true;
+    }
+
+    const result = await MySwal.fire({
+      icon: "warning",
+      title: "Salir sin guardar",
+      text: "Tienes cambios sin guardar. ¿Realmente deseas salir?",
+      showCancelButton: true,
+      confirmButtonText: "Sí, salir",
+      cancelButtonText: "No, continuar",
+      confirmButtonColor: "#d33",
+    });
+
+    return result.isConfirmed;
   };
 
   const onSubmitModal = async (): Promise<boolean> => {
@@ -54,7 +80,13 @@ export const NewSupplierModal: FC<{
   };
 
   return (
-    <Modal open={open} onClose={handleClose} onSubmit={onSubmitModal} title="Nuevo proveedor">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      onAttemptClose={handleAttemptClose}
+      onSubmit={onSubmitModal}
+      title="Nuevo proveedor"
+    >
       <>
         <TextField
           label="Nombre del proveedor"

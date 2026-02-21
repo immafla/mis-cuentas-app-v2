@@ -13,10 +13,14 @@ import {
   Select,
   TextField,
 } from "@mui/material";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 import { Modal } from "@/components/Modal";
 import { SupplierRow } from "@/services/suppliers.service";
 import { NewLotValues, ProductOption } from "../../hooks/useLots";
+
+const MySwal = withReactContent(Swal);
 
 export const NewLotModal: FC<{
   open: boolean;
@@ -45,7 +49,9 @@ export const NewLotModal: FC<{
     purchasePrice: "",
   });
 
-  const [receivedAt, setReceivedAt] = useState(new Date().toISOString().slice(0, 10));
+  const initialDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+  const [receivedAt, setReceivedAt] = useState(initialDate);
   const [supplierId, setSupplierId] = useState("");
   const [rows, setRows] = useState<RowState[]>([createRow()]);
   const [errors, setErrors] = useState<{
@@ -55,7 +61,7 @@ export const NewLotModal: FC<{
   }>({ rows: [{}] });
 
   const resetForm = () => {
-    setReceivedAt(new Date().toISOString().slice(0, 10));
+    setReceivedAt(initialDate);
     setSupplierId("");
     setRows([createRow()]);
     setErrors({ rows: [{}] });
@@ -78,6 +84,38 @@ export const NewLotModal: FC<{
         Number(row.purchasePrice) >= 0,
     );
   }, [receivedAt, rows, supplierId]);
+
+  const isFormDirty = useMemo(() => {
+    const hasSupplier = String(supplierId).trim().length > 0;
+    const hasChangedDate = receivedAt !== initialDate;
+    const hasMultipleRows = rows.length > 1;
+    const hasRowData = rows.some(
+      (row) =>
+        Boolean(row.selectedProduct?._id) ||
+        String(row.quantity ?? "").trim().length > 0 ||
+        String(row.purchasePrice ?? "").trim().length > 0,
+    );
+
+    return hasSupplier || hasChangedDate || hasMultipleRows || hasRowData;
+  }, [initialDate, receivedAt, rows, supplierId]);
+
+  const handleAttemptClose = async () => {
+    if (!isFormDirty) {
+      return true;
+    }
+
+    const result = await MySwal.fire({
+      icon: "warning",
+      title: "Salir sin guardar",
+      text: "Tienes cambios sin guardar. ¿Realmente deseas salir?",
+      showCancelButton: true,
+      confirmButtonText: "Sí, salir",
+      cancelButtonText: "No, continuar",
+      confirmButtonColor: "#d33",
+    });
+
+    return result.isConfirmed;
+  };
 
   const handleAddProductRow = () => {
     setRows((prev) => [...prev, createRow()]);
@@ -206,7 +244,13 @@ export const NewLotModal: FC<{
   };
 
   return (
-    <Modal open={open} onClose={handleClose} onSubmit={handleSubmit} title="Registrar lote">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      onAttemptClose={handleAttemptClose}
+      onSubmit={handleSubmit}
+      title="Registrar lote"
+    >
       <>
         <TextField
           type="date"

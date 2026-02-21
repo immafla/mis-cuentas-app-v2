@@ -37,6 +37,16 @@ export const useNewProductModal = ({ columns, onSubmit }: UseNewProductModalPara
     [columns],
   );
 
+  const isFormDirty = useMemo(() => {
+    const hasBrand = brandSelected.trim().length > 0;
+    const hasCategory = categorySelected.trim().length > 0;
+    const hasAnyValue = Object.values(values).some(
+      (value) => String(value ?? "").trim().length > 0,
+    );
+
+    return hasBrand || hasCategory || hasAnyValue;
+  }, [brandSelected, categorySelected, values]);
+
   const handleFieldChange = useCallback((name: string, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -153,6 +163,7 @@ export const useNewProductModal = ({ columns, onSubmit }: UseNewProductModalPara
     bussinesCategoryList,
     brandSelected,
     categorySelected,
+    isFormDirty,
     values,
     errors,
     formColumns,

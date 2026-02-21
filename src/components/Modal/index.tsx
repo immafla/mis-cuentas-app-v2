@@ -7,9 +7,20 @@ export const Modal: FC<{
   title: string;
   children: JSX.Element | JSX.Element[];
   onClose: () => void;
+  onAttemptClose?: () => boolean | Promise<boolean>;
   onSubmit: () => void | boolean | Promise<void | boolean>;
   open: boolean;
-}> = ({ open, onClose, onSubmit, children, title }) => {
+}> = ({ open, onClose, onAttemptClose, onSubmit, children, title }) => {
+  const handleAttemptClose = async () => {
+    const canClose = await onAttemptClose?.();
+
+    if (canClose === false) {
+      return;
+    }
+
+    onClose();
+  };
+
   const handleSubmit = async () => {
     const canClose = await onSubmit();
 
@@ -25,7 +36,12 @@ export const Modal: FC<{
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog
+      open={open}
+      onClose={() => {
+        void handleAttemptClose();
+      }}
+    >
       <DialogTitle textAlign="center">{title}</DialogTitle>
       <DialogContent>
         <form onSubmit={(e) => e.preventDefault()}>
@@ -42,7 +58,13 @@ export const Modal: FC<{
         </form>
       </DialogContent>
       <DialogActions sx={{ p: "1.25rem" }}>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          onClick={() => {
+            void handleAttemptClose();
+          }}
+        >
+          Cancel
+        </Button>
         <Button color="primary" onClick={handleSubmit} variant="contained">
           Aceptar
         </Button>

@@ -2,6 +2,10 @@ import React, { FC, useState } from "react";
 import { Modal } from "../../../../components/Modal";
 import { MRT_ColumnDef } from "material-react-table";
 import { TextField } from "@mui/material";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+
+const MySwal = withReactContent(Swal);
 
 export const NewBrandModal: FC<{
   columns: MRT_ColumnDef<any>[];
@@ -28,6 +32,28 @@ export const NewBrandModal: FC<{
     onClose();
   };
 
+  const handleAttemptClose = async () => {
+    const isFormDirty = Object.values(values).some((value) =>
+      typeof value === "string" ? value.trim().length > 0 : Boolean(value),
+    );
+
+    if (!isFormDirty) {
+      return true;
+    }
+
+    const result = await MySwal.fire({
+      icon: "warning",
+      title: "Salir sin guardar",
+      text: "Tienes cambios sin guardar. ¿Realmente deseas salir?",
+      showCancelButton: true,
+      confirmButtonText: "Sí, salir",
+      cancelButtonText: "No, continuar",
+      confirmButtonColor: "#d33",
+    });
+
+    return result.isConfirmed;
+  };
+
   const onSubmitModal = async (): Promise<boolean> => {
     const newErrors: Record<string, string> = {};
     columns.forEach((column) => {
@@ -50,13 +76,19 @@ export const NewBrandModal: FC<{
   };
 
   return (
-    <Modal open={open} onClose={handleClose} onSubmit={onSubmitModal} title="Nueva marca">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      onAttemptClose={handleAttemptClose}
+      onSubmit={onSubmitModal}
+      title="Nueva marca"
+    >
       <>
         {columns.map((column, index) => {
           const key = column.accessorKey ?? "";
           return (
             <TextField
-              key={index}
+              key={key || String(column.header ?? index)}
               label={column.header}
               name={key}
               value={values[key] ?? ""}
