@@ -30,6 +30,30 @@ const parseNumericInput = (value: unknown) => {
   return Number(normalized);
 };
 
+const toSafeString = (value: unknown, fallback = "") => {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  return fallback;
+};
+
+const toObjectIdString = (value: unknown) => {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (value instanceof Types.ObjectId) {
+    return value.toString();
+  }
+
+  return "";
+};
+
 export async function createProduct(input: ProductCreateInput) {
   try {
     await connectDB();
@@ -207,6 +231,180 @@ export async function updateProductById(id: string, update: ProductUpdate) {
     return {
       success: false,
       error: "Failed to update product",
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+type ProductListItem = {
+  _id: string;
+  name: string;
+  brand: string;
+  category: string;
+  brand_name?: string;
+  category_name?: string;
+  content?: number;
+  sale_price: string;
+  bar_code: string;
+  amount: number;
+};
+
+type AggregatedProduct = {
+  _id: Types.ObjectId | string;
+  name?: string;
+  brand?: string;
+  category?: Types.ObjectId | string | null;
+  brand_name?: string;
+  category_name?: string;
+  content?: number | null;
+  sale_price?: string | number;
+  bar_code?: string;
+  amount?: number;
+};
+
+type GetAllProductsParams = {
+  q?: string;
+  limit?: number;
+};
+
+export async function getAllProducts(params?: GetAllProductsParams) {
+  try {
+    await connectDB();
+
+    const query = String(params?.q ?? "").trim();
+    const limitParam = Number(params?.limit ?? 100);
+    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 50) : 10;
+
+    const products = await Product.aggregate<AggregatedProduct>([
+      {
+        $lookup: {
+          from: "brands",
+          let: { brandId: "$brand" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [{ $toString: "$_id" }, "$$brandId"],
+                },
+              },
+            },
+            { $project: { _id: 0, name: 1 } },
+          ],
+          as: "brandDoc",
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          pipeline: [{ $project: { _id: 0, name: 1 } }],
+          as: "categoryDoc",
+        },
+      },
+      {
+        $addFields: {
+          brand_name: {
+            $ifNull: [{ $arrayElemAt: ["$brandDoc.name", 0] }, ""],
+          },
+          category_name: {
+            $ifNull: [{ $arrayElemAt: ["$categoryDoc.name", 0] }, ""],
+          },
+        },
+      },
+      ...(query
+        ? [
+            {
+              $match: {
+                $or: [
+                  { name: { $regex: query, $options: "i" } },
+                  { bar_code: { $regex: query, $options: "i" } },
+                  { brand_name: { $regex: query, $options: "i" } },
+                  { category_name: { $regex: query, $options: "i" } },
+                ],
+              },
+            },
+          ]
+        : []),
+      { $sort: { name: 1 } },
+      { $limit: limit },
+      {
+        $project: {
+          brandDoc: 0,
+          categoryDoc: 0,
+        },
+      },
+    ]);
+
+    return {
+      success: true,
+      data: products.map((product) => {
+        const id = toObjectIdString(product._id);
+        const category = toObjectIdString(product.category);
+
+        return {
+          ...product,
+          _id: id,
+          name: toSafeString(product.name),
+          brand: toSafeString(product.brand),
+          category,
+          brand_name: toSafeString(product.brand_name),
+          category_name: toSafeString(product.category_name),
+          content:
+            product.content === undefined || product.content === null
+              ? undefined
+              : Number(product.content),
+          sale_price: toSafeString(product.sale_price, "0"),
+          bar_code: toSafeString(product.bar_code),
+          amount: Number(product.amount ?? 0),
+        } as ProductListItem;
+      }),
+    };
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return {
+      success: false,
+      error: "Failed to fetch products",
+      message: error instanceof Error ? error.message : "Unknown error",
+      data: [] as ProductListItem[],
+    };
+  }
+}
+
+export async function deleteProductById(id: string) {
+  try {
+    await connectDB();
+
+    if (!Types.ObjectId.isValid(id)) {
+      return {
+        success: false,
+        error: "Invalid product id",
+        message: "El id del producto no es válido.",
+      };
+    }
+
+    const deletedProduct = await Product.findByIdAndDelete(id).lean();
+
+    if (!deletedProduct) {
+      return {
+        success: false,
+        error: "Product not found",
+        message: "No se encontró el producto.",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Producto eliminado correctamente",
+      data: {
+        _id: String(deletedProduct._id),
+      },
+    };
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return {
+      success: false,
+      error: "Failed to delete product",
       message: error instanceof Error ? error.message : "Unknown error",
     };
   }

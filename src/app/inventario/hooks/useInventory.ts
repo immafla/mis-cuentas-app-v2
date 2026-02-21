@@ -5,8 +5,14 @@ import { MaterialReactTableProps, MRT_Cell, MRT_ColumnDef, MRT_Row } from "mater
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
-import { ApiService } from "@/services/api.service";
-import { createProduct, updateProductById } from "@/services/products.service";
+import { getAllBrands } from "@/services/brands.service";
+import { getAllCategories } from "@/services/categories.service";
+import {
+  createProduct,
+  deleteProductById,
+  getAllProducts,
+  updateProductById,
+} from "@/services/products.service";
 import { productColumns } from "../columns";
 
 const MySwal = withReactContent(Swal);
@@ -46,8 +52,6 @@ const mapProduct = (product: ProductWithId, brands: Brand[], categories: Categor
 };
 
 export const useInventory = () => {
-  const apiService = useMemo(() => new ApiService(), []);
-
   const [tableData, setTableData] = useState<ProductWithId[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -55,29 +59,34 @@ export const useInventory = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const fetchListProducts = useCallback(
-    async (brandList: Brand[], categoryList: Category[]) => {
-      try {
-        setIsLoading(true);
-        const products: ProductWithId[] = await (await apiService.getAllProducts()).json();
-        const productsParsed = products
-          .map((element) => mapProduct(element, brandList, categoryList))
-          .sort((a, b) => {
-            const catCompare = String(a.category ?? "").localeCompare(String(b.category ?? ""), "es");
-            if (catCompare !== 0) return catCompare;
-            const brandCompare = String(a.brand ?? "").localeCompare(String(b.brand ?? ""), "es");
-            if (brandCompare !== 0) return brandCompare;
-            return String(a.name ?? "").localeCompare(String(b.name ?? ""), "es");
-          });
-        setTableData(productsParsed);
-      } catch (error) {
-        console.log("Error al obtener la lista de productos =>", { error });
-      } finally {
-        setIsLoading(false);
+  const fetchListProducts = useCallback(async (brandList: Brand[], categoryList: Category[]) => {
+    try {
+      setIsLoading(true);
+
+      const productsResult = await getAllProducts();
+      if (!productsResult.success || !productsResult.data) {
+        throw new Error(
+          productsResult.message ?? productsResult.error ?? "No fue posible obtener productos.",
+        );
       }
-    },
-    [apiService],
-  );
+
+      const products: ProductWithId[] = productsResult.data as ProductWithId[];
+      const productsParsed = products
+        .map((element) => mapProduct(element, brandList, categoryList))
+        .sort((a, b) => {
+          const catCompare = String(a.category ?? "").localeCompare(String(b.category ?? ""), "es");
+          if (catCompare !== 0) return catCompare;
+          const brandCompare = String(a.brand ?? "").localeCompare(String(b.brand ?? ""), "es");
+          if (brandCompare !== 0) return brandCompare;
+          return String(a.name ?? "").localeCompare(String(b.name ?? ""), "es");
+        });
+      setTableData(productsParsed);
+    } catch (error) {
+      console.log("Error al obtener la lista de productos =>", { error });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const fetchListProductsCurrent = useCallback(async () => {
     await fetchListProducts(brands, categories);
@@ -149,47 +158,46 @@ export const useInventory = () => {
     setValidationErrors({});
   }, []);
 
-  const handleDeleteRow = useCallback(
-    async (row: MRT_Row<ProductWithId>) => {
-      const confirmDelete = await MySwal.fire({
-        icon: "warning",
-        title: "¿Eliminar producto?",
-        text: `Se eliminará ${row.getValue("name")}. Esta acción no se puede deshacer.`,
-        showCancelButton: true,
-        confirmButtonText: "Sí, eliminar",
-        cancelButtonText: "Cancelar",
-        confirmButtonColor: "#d33",
+  const handleDeleteRow = useCallback(async (row: MRT_Row<ProductWithId>) => {
+    const confirmDelete = await MySwal.fire({
+      icon: "warning",
+      title: "¿Eliminar producto?",
+      text: `Se eliminará ${row.getValue("name")}. Esta acción no se puede deshacer.`,
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#d33",
+    });
+
+    if (!confirmDelete.isConfirmed) {
+      return;
+    }
+
+    try {
+      const response = await deleteProductById(String(row.original._id ?? ""));
+
+      if (!response.success) {
+        throw new Error(
+          response.message ?? response.error ?? "No fue posible eliminar el producto.",
+        );
+      }
+
+      setTableData((prev) => prev.filter((_, index) => index !== row.index));
+      await MySwal.fire({
+        icon: "success",
+        title: "Producto eliminado",
+        text: "El producto se eliminó correctamente.",
+        timer: 1600,
+        showConfirmButton: false,
       });
-
-      if (!confirmDelete.isConfirmed) {
-        return;
-      }
-
-      try {
-        const response = await apiService.deleteProduct(row.original._id);
-
-        if (!response.ok) {
-          throw new Error("No fue posible eliminar el producto.");
-        }
-
-        setTableData((prev) => prev.filter((_, index) => index !== row.index));
-        await MySwal.fire({
-          icon: "success",
-          title: "Producto eliminado",
-          text: "El producto se eliminó correctamente.",
-          timer: 1600,
-          showConfirmButton: false,
-        });
-      } catch (error) {
-        await MySwal.fire({
-          icon: "error",
-          title: "Error al eliminar",
-          text: error instanceof Error ? error.message : "No fue posible eliminar el producto.",
-        });
-      }
-    },
-    [apiService],
-  );
+    } catch (error) {
+      await MySwal.fire({
+        icon: "error",
+        title: "Error al eliminar",
+        text: error instanceof Error ? error.message : "No fue posible eliminar el producto.",
+      });
+    }
+  }, []);
 
   const getCommonEditTextFieldProps = useCallback(
     (cell: MRT_Cell<ProductWithId>) => ({
@@ -266,14 +274,21 @@ export const useInventory = () => {
 
     const loadData = async () => {
       try {
-        const [brandsResponse, categoriesResponse] = await Promise.all([
-          apiService.getAllBrands(),
-          apiService.getAllCategories(),
+        const [brandsResult, categoriesResult] = await Promise.all([
+          getAllBrands(),
+          getAllCategories(),
         ]);
-        const [brandList, categoryList] = await Promise.all([
-          brandsResponse.json(),
-          categoriesResponse.json(),
-        ]);
+
+        if (!brandsResult.success || !categoriesResult.success) {
+          throw new Error(
+            brandsResult.message ??
+              categoriesResult.message ??
+              "No fue posible obtener marcas y categorías.",
+          );
+        }
+
+        const brandList = brandsResult.data as Brand[];
+        const categoryList = categoriesResult.data as Category[];
 
         if (!isMounted) {
           return;
@@ -298,7 +313,7 @@ export const useInventory = () => {
     return () => {
       isMounted = false;
     };
-  }, [apiService, fetchListProducts]);
+  }, [fetchListProducts]);
 
   return {
     columns,

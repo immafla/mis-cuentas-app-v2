@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { MRT_Row } from "material-react-table";
 
-import { ApiService } from "@/services/api.service";
 import { createLot, deleteLotById, getAllLots, LotRow } from "@/services/lots.service";
+import { getAllProducts } from "@/services/products.service";
 import { getAllSuppliers, SupplierRow } from "@/services/suppliers.service";
 
 const MySwal = withReactContent(Swal);
@@ -29,8 +29,6 @@ export type NewLotValues = {
 };
 
 export const useLots = () => {
-  const apiService = useMemo(() => new ApiService(), []);
-
   const [isLoading, setIsLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [lots, setLots] = useState<LotRow[]>([]);
@@ -40,10 +38,10 @@ export const useLots = () => {
   const loadData = useCallback(async () => {
     setIsLoading(true);
 
-    const [lotsResult, suppliersResult, productsResponse] = await Promise.all([
+    const [lotsResult, suppliersResult, productsResult] = await Promise.all([
       getAllLots(),
       getAllSuppliers(),
-      apiService.getAllProducts(),
+      getAllProducts(),
     ]);
 
     if (lotsResult.success && lotsResult.data) {
@@ -62,8 +60,8 @@ export const useLots = () => {
       );
     }
 
-    if (productsResponse.ok) {
-      const productsData = (await productsResponse.json()) as ProductOption[];
+    if (productsResult.success && productsResult.data) {
+      const productsData = productsResult.data as ProductOption[];
       setProductOptions(
         [...productsData].sort((a, b) =>
           String(a.name ?? "").localeCompare(String(b.name ?? ""), "es"),
@@ -72,10 +70,16 @@ export const useLots = () => {
     }
 
     setIsLoading(false);
-  }, [apiService]);
+  }, []);
 
   useEffect(() => {
-    void loadData();
+    const timeoutId = globalThis.setTimeout(() => {
+      void loadData();
+    }, 0);
+
+    return () => {
+      globalThis.clearTimeout(timeoutId);
+    };
   }, [loadData]);
 
   const handleCreateLot = useCallback(

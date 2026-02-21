@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MRT_ColumnDef } from "material-react-table";
-
-import { ApiService } from "@/services/api.service";
+import { getAllBrands } from "@/services/brands.service";
+import { getAllCategories } from "@/services/categories.service";
 import { Product, ProductWithId } from "../../../hooks/useInventory";
 import { ProductFormValues, SelectOption } from "../types";
 
@@ -17,8 +17,6 @@ const getInitialValues = (columns: MRT_ColumnDef<ProductWithId>[]): ProductFormV
   }, {} as ProductFormValues);
 
 export const useNewProductModal = ({ columns, onSubmit }: UseNewProductModalParams) => {
-  const apiService = useMemo(() => new ApiService(), []);
-
   const [brandList, setBrandList] = useState<SelectOption[]>([]);
   const [bussinesCategoryList, setBussinesCategoryList] = useState<SelectOption[]>([]);
   const [brandSelected, setBrandSelected] = useState("");
@@ -116,19 +114,17 @@ export const useNewProductModal = ({ columns, onSubmit }: UseNewProductModalPara
 
     const loadOptions = async () => {
       try {
-        const [brandsResponse, categoriesResponse] = await Promise.all([
-          apiService.getAllBrands(),
-          apiService.getAllCategories(),
-        ]);
-
-        const [brandsData, categoriesData] = await Promise.all([
-          brandsResponse.json(),
-          categoriesResponse.json(),
+        const [brandsResult, categoriesResult] = await Promise.all([
+          getAllBrands(),
+          getAllCategories(),
         ]);
 
         if (!isMounted) {
           return;
         }
+
+        const brandsData = brandsResult.success ? brandsResult.data : [];
+        const categoriesData = categoriesResult.success ? categoriesResult.data : [];
 
         setBrandList(
           Array.isArray(brandsData)
@@ -160,7 +156,7 @@ export const useNewProductModal = ({ columns, onSubmit }: UseNewProductModalPara
     return () => {
       isMounted = false;
     };
-  }, [apiService]);
+  }, []);
 
   return {
     brandList,

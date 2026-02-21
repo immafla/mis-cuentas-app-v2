@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { getProductByBarcode } from "../../../services/products.service";
+import { getAllProducts, getProductByBarcode } from "../../../services/products.service";
 import { createSaleRecord } from "@/services/sales.service";
 
 type SaleLineItem = {
@@ -376,6 +376,7 @@ export const useSales = () => {
 
   useEffect(() => {
     const trimmedSearch = productSearchInput.trim();
+    let isCancelled = false;
 
     if (trimmedSearch.length < 2) {
       setProductSearchOptions([]);
@@ -383,39 +384,33 @@ export const useSales = () => {
       return;
     }
 
-    const controller = new AbortController();
     const timeoutId = globalThis.setTimeout(async () => {
       try {
         setIsSearchingProducts(true);
-        const response = await fetch(
-          `/api/products?q=${encodeURIComponent(trimmedSearch)}&limit=10`,
-          {
-            method: "GET",
-            signal: controller.signal,
-          },
-        );
+        const response = await getAllProducts({ q: trimmedSearch, limit: 10 });
 
-        if (!response.ok) {
+        if (!response.success || !response.data) {
           throw new Error("No se pudo buscar productos");
         }
 
-        const data = (await response.json()) as ProductSearchOption[];
-        setProductSearchOptions(data);
+        if (!isCancelled) {
+          setProductSearchOptions(response.data as ProductSearchOption[]);
+        }
       } catch (error) {
-        if (controller.signal.aborted) {
+        if (isCancelled) {
           return;
         }
         console.error("Error al buscar productos", error);
         setProductSearchOptions([]);
       } finally {
-        if (!controller.signal.aborted) {
+        if (!isCancelled) {
           setIsSearchingProducts(false);
         }
       }
     }, 350);
 
     return () => {
-      controller.abort();
+      isCancelled = true;
       globalThis.clearTimeout(timeoutId);
     };
   }, [productSearchInput]);
