@@ -60,9 +60,15 @@ export const useInventory = () => {
       try {
         setIsLoading(true);
         const products: ProductWithId[] = await (await apiService.getAllProducts()).json();
-        const productsParsed = products.map((element) =>
-          mapProduct(element, brandList, categoryList),
-        );
+        const productsParsed = products
+          .map((element) => mapProduct(element, brandList, categoryList))
+          .sort((a, b) => {
+            const catCompare = String(a.category ?? "").localeCompare(String(b.category ?? ""), "es");
+            if (catCompare !== 0) return catCompare;
+            const brandCompare = String(a.brand ?? "").localeCompare(String(b.brand ?? ""), "es");
+            if (brandCompare !== 0) return brandCompare;
+            return String(a.name ?? "").localeCompare(String(b.name ?? ""), "es");
+          });
         setTableData(productsParsed);
       } catch (error) {
         console.log("Error al obtener la lista de productos =>", { error });
@@ -273,9 +279,15 @@ export const useInventory = () => {
           return;
         }
 
-        setBrands(brandList);
-        setCategories(categoryList);
-        await fetchListProducts(brandList, categoryList);
+        const sortedBrandList = [...brandList].sort((a, b) =>
+          String(a.name ?? "").localeCompare(String(b.name ?? ""), "es"),
+        );
+        const sortedCategoryList = [...categoryList].sort((a, b) =>
+          String(a.name ?? "").localeCompare(String(b.name ?? ""), "es"),
+        );
+        setBrands(sortedBrandList);
+        setCategories(sortedCategoryList);
+        await fetchListProducts(sortedBrandList, sortedCategoryList);
       } catch (error) {
         console.log("Error al obtener las marcas =>", { error });
       }

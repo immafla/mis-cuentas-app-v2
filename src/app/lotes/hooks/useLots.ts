@@ -47,16 +47,28 @@ export const useLots = () => {
     ]);
 
     if (lotsResult.success && lotsResult.data) {
-      setLots(lotsResult.data);
+      setLots(
+        [...lotsResult.data].sort((a, b) =>
+          String(a.supplierName ?? "").localeCompare(String(b.supplierName ?? ""), "es"),
+        ),
+      );
     }
 
     if (suppliersResult.success && suppliersResult.data) {
-      setSuppliers(suppliersResult.data);
+      setSuppliers(
+        [...suppliersResult.data].sort((a, b) =>
+          String(a.name ?? "").localeCompare(String(b.name ?? ""), "es"),
+        ),
+      );
     }
 
     if (productsResponse.ok) {
       const productsData = (await productsResponse.json()) as ProductOption[];
-      setProductOptions(productsData);
+      setProductOptions(
+        [...productsData].sort((a, b) =>
+          String(a.name ?? "").localeCompare(String(b.name ?? ""), "es"),
+        ),
+      );
     }
 
     setIsLoading(false);

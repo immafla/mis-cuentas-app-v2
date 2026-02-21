@@ -279,11 +279,13 @@ export const NewLotModal: FC<{
               setErrors((prev) => ({ ...prev, supplierId: undefined }));
             }}
           >
-            {suppliers.map((supplier) => (
-              <MenuItem key={supplier._id} value={supplier._id}>
-                {`${supplier.name} · ${supplier.nit}`}
-              </MenuItem>
-            ))}
+            {[...suppliers]
+              .sort((a, b) => String(a.name ?? "").localeCompare(String(b.name ?? ""), "es"))
+              .map((supplier) => (
+                <MenuItem key={supplier._id} value={supplier._id}>
+                  {`${supplier.name} · ${supplier.nit}`}
+                </MenuItem>
+              ))}
           </Select>
           <FormHelperText>{errors.supplierId ?? ""}</FormHelperText>
         </FormControl>

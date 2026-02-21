@@ -64,9 +64,9 @@ export const useBrands = () => {
 
     if (result.success && result.data) {
       setTableData((prev) =>
-        prev.map((item, index) =>
-          index === row.index ? { ...item, name: result.data.name } : item,
-        ),
+        prev
+          .map((item, index) => (index === row.index ? { ...item, name: result.data.name } : item))
+          .sort((a, b) => String(a.name ?? "").localeCompare(String(b.name ?? ""), "es")),
       );
       exitEditingMode();
       await new Promise((resolve) => setTimeout(resolve, 180));
@@ -177,7 +177,11 @@ export const useBrands = () => {
       const result = await createBrand(values.name);
 
       if (result.success && result.data) {
-        setTableData((prev) => [...prev, result.data]);
+        setTableData((prev) =>
+          [...prev, result.data].sort((a, b) =>
+            String(a.name ?? "").localeCompare(String(b.name ?? ""), "es"),
+          ),
+        );
         setCreateModalOpen(false);
         await MySwal.fire({
           icon: "success",

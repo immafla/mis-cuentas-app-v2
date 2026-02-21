@@ -66,7 +66,11 @@ export const useCategories = () => {
       return;
     }
 
-    setTableData((prev) => prev.map((item, index) => (index === row.index ? result.data : item)));
+    setTableData((prev) =>
+      prev
+        .map((item, index) => (index === row.index ? result.data : item))
+        .sort((a, b) => String(a.name ?? "").localeCompare(String(b.name ?? ""), "es")),
+    );
     exitEditingMode();
     await MySwal.fire({
       icon: "success",
@@ -159,7 +163,11 @@ export const useCategories = () => {
       return false;
     }
 
-    setTableData((prev) => [...prev, result.data]);
+    setTableData((prev) =>
+      [...prev, result.data].sort((a, b) =>
+        String(a.name ?? "").localeCompare(String(b.name ?? ""), "es"),
+      ),
+    );
     setCreateModalOpen(false);
     await MySwal.fire({
       icon: "success",

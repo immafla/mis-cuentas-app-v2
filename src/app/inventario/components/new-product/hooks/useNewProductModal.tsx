@@ -132,18 +132,22 @@ export const useNewProductModal = ({ columns, onSubmit }: UseNewProductModalPara
 
         setBrandList(
           Array.isArray(brandsData)
-            ? brandsData.map((el: { _id: string; name: string }) => ({
-                value: el._id,
-                label: el.name,
-              }))
+            ? brandsData
+                .map((el: { _id: string; name: string }) => ({
+                  value: el._id,
+                  label: el.name,
+                }))
+                .sort((a, b) => a.label.localeCompare(b.label, "es"))
             : [],
         );
         setBussinesCategoryList(
           Array.isArray(categoriesData)
-            ? categoriesData.map((el: { _id: string; name: string }) => ({
-                value: el._id,
-                label: el.name,
-              }))
+            ? categoriesData
+                .map((el: { _id: string; name: string }) => ({
+                  value: el._id,
+                  label: el.name,
+                }))
+                .sort((a, b) => a.label.localeCompare(b.label, "es"))
             : [],
         );
       } catch (error) {

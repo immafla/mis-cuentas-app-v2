@@ -9,7 +9,7 @@ const escapeRegex = (value: string) => value.replaceAll(/[.*+?^${}()|[\]\\]/g, S
 export async function GET() {
   try {
     await connectDB();
-    const brands = await Brand.find({});
+    const brands = await Brand.find({}).sort({ name: 1 });
     return NextResponse.json(brands);
   } catch (error) {
     console.error("Error fetching brands:", error);

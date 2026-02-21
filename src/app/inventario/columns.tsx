@@ -20,11 +20,13 @@ export const productColumns = (
       muiEditTextFieldProps: {
         variant: "outlined",
         select: true,
-        children: categories.map((category) => (
-          <MenuItem key={category._id} value={category.name}>
-            {category.name}
-          </MenuItem>
-        )),
+        children: [...categories]
+          .sort((a, b) => String(a.name).localeCompare(String(b.name), "es"))
+          .map((category) => (
+            <MenuItem key={category._id} value={category.name}>
+              {category.name}
+            </MenuItem>
+          )),
       },
       Cell: ({ cell }: { cell: any }) => {
         const categoryValue = cell.getValue();
@@ -47,11 +49,13 @@ export const productColumns = (
         return {
           variant: "outlined",
           select: true, //change to select for a dropdown
-          children: brands.map((brand) => (
-            <MenuItem key={brand._id} value={brand.name}>
-              {brand.name}
-            </MenuItem>
-          )),
+          children: [...brands]
+            .sort((a, b) => String(a.name).localeCompare(String(b.name), "es"))
+            .map((brand) => (
+              <MenuItem key={brand._id} value={brand.name}>
+                {brand.name}
+              </MenuItem>
+            )),
         };
       },
     },
