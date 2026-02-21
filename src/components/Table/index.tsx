@@ -12,6 +12,8 @@ import { MRT_Localization_ES } from "material-react-table/locales/es";
 import { Button, Box, Tooltip, IconButton, useTheme, useMediaQuery } from "@mui/material";
 import { useGlobalContext } from "@/context/global";
 
+type ExpandedState = true | Record<string, boolean>;
+
 const Table = ({
   columns,
   tableData,
@@ -53,18 +55,22 @@ const Table = ({
   const [grouping, setGrouping] = React.useState<string[]>(
     enableGrouping && initialGrouping ? initialGrouping : [],
   );
+  const [expanded, setExpanded] = React.useState<ExpandedState>({});
   const tableId = React.useId();
   const { isLoadingTable, setTableSourceLoading, runWithTableLoading } = useGlobalContext();
 
   React.useEffect(() => {
     if (!enableGrouping) {
       setGrouping([]);
+      setExpanded({});
       return;
     }
 
     if (initialGrouping?.length) {
       setGrouping(initialGrouping);
     }
+
+    setExpanded({});
   }, [enableGrouping, initialGrouping]);
 
   React.useEffect(() => {
@@ -76,28 +82,55 @@ const Table = ({
     };
   }, [isLoading, isSaving, setTableSourceLoading, tableId]);
 
-  const ToolbarActions = () => (
-    <Button
-      color="primary"
-      onClick={() => setCreateModalOpen(true)}
-      variant="contained"
-      fullWidth={isMobile}
-      sx={{ minWidth: isMobile ? "100%" : "auto" }}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "0.5rem",
-        }}
-      >
-        <AddCircle color="secondary" />
-        Nuevo
+  const ToolbarActions = () => {
+    const isCollapsed = typeof expanded !== "boolean" && Object.keys(expanded).length === 0;
+
+    return (
+      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", width: isMobile ? "100%" : "auto" }}>
+        <Button
+          color="primary"
+          onClick={() => setCreateModalOpen(true)}
+          variant="contained"
+          fullWidth={isMobile}
+          sx={{ minWidth: isMobile ? "100%" : "auto" }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+            }}
+          >
+            <AddCircle color="secondary" />
+            Nuevo
+          </Box>
+        </Button>
+
+        {enableGrouping && (
+          <>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setExpanded(true)}
+              disabled={expanded === true}
+            >
+              Expandir todo
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setExpanded({})}
+              disabled={isCollapsed}
+            >
+              Colapsar todo
+            </Button>
+          </>
+        )}
       </Box>
-    </Button>
-  );
+    );
+  };
 
   const RowActions = ({ row, table }: { row: any; table: any }) => (
     <Box sx={{ display: "flex", gap: isMobile ? "0.25rem" : "0.75rem" }}>
@@ -140,7 +173,7 @@ const Table = ({
     initialState: {
       density: "compact",
       showGlobalFilter: true,
-      ...(enableGrouping && initialGrouping ? { grouping: initialGrouping, expanded: true } : {}),
+      ...(enableGrouping && initialGrouping ? { grouping: initialGrouping, expanded: {} } : {}),
     },
     editDisplayMode: "modal",
     localization: MRT_Localization_ES,
@@ -150,8 +183,10 @@ const Table = ({
       isLoading: isLoading || isLoadingTable,
       isSaving,
       ...(enableGrouping ? { grouping } : {}),
+      ...(enableGrouping ? { expanded } : {}),
     },
     onGroupingChange: enableGrouping ? setGrouping : undefined,
+    onExpandedChange: enableGrouping ? setExpanded : undefined,
     muiTablePaperProps: {
       sx: {
         width: "100%",
