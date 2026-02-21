@@ -10,11 +10,32 @@ const normalizeBrand = (brand: { _id: unknown; name: string }) => ({
   name: brand.name,
 });
 
+const normalizeName = (value: string) => value.trim().replaceAll(/\s+/g, " ").toUpperCase();
+
 export async function createBrand(name: string) {
   try {
     await connectDB();
-    const newBrand = new Brand({ name });
-    newBrand.name = newBrand.name.toUpperCase();
+
+    const normalizedName = normalizeName(String(name ?? ""));
+
+    if (!normalizedName) {
+      return {
+        success: false,
+        error: "Missing required fields",
+        message: "El nombre es obligatorio.",
+      };
+    }
+
+    const existingByName = await Brand.findOne({ name: normalizedName }).lean();
+    if (existingByName) {
+      return {
+        success: false,
+        error: "Duplicated brand",
+        message: "Ya existe una marca con ese nombre.",
+      };
+    }
+
+    const newBrand = new Brand({ name: normalizedName });
     await newBrand.save();
 
     return {
@@ -83,6 +104,7 @@ export async function deleteBrandById(id: string) {
 export async function updateBrandById(id: string, name: string) {
   try {
     await connectDB();
+
     if (!Types.ObjectId.isValid(id)) {
       return {
         success: false,
@@ -90,7 +112,30 @@ export async function updateBrandById(id: string, name: string) {
         message: "Invalid brand id",
       };
     }
-    const normalizedName = name.toUpperCase();
+
+    const normalizedName = normalizeName(String(name ?? ""));
+
+    if (!normalizedName) {
+      return {
+        success: false,
+        error: "Missing required fields",
+        message: "El nombre es obligatorio.",
+      };
+    }
+
+    const duplicatedByName = await Brand.findOne({
+      _id: { $ne: id },
+      name: normalizedName,
+    }).lean();
+
+    if (duplicatedByName) {
+      return {
+        success: false,
+        error: "Duplicated brand",
+        message: "Ya existe una marca con ese nombre.",
+      };
+    }
+
     const updatedBrand = await Brand.findByIdAndUpdate(
       id,
       { name: normalizedName },
