@@ -51,7 +51,7 @@ export default function InventarioPage() {
             setCreateModalOpen={setCreateModalOpen}
             enableGrouping={true}
             groupedColumnMode="reorder"
-            initialGrouping={["category"]}
+            initialGrouping={["category", "brand"]}
           />
           {createModalOpen && (
             <NewProductModal

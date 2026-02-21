@@ -50,8 +50,22 @@ const Table = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isSaving, setIsSaving] = React.useState(false);
+  const [grouping, setGrouping] = React.useState<string[]>(
+    enableGrouping && initialGrouping ? initialGrouping : [],
+  );
   const tableId = React.useId();
   const { isLoadingTable, setTableSourceLoading, runWithTableLoading } = useGlobalContext();
+
+  React.useEffect(() => {
+    if (!enableGrouping) {
+      setGrouping([]);
+      return;
+    }
+
+    if (initialGrouping?.length) {
+      setGrouping(initialGrouping);
+    }
+  }, [enableGrouping, initialGrouping]);
 
   React.useEffect(() => {
     const currentLoadingState = Boolean(isLoading || isSaving);
@@ -132,7 +146,12 @@ const Table = ({
     localization: MRT_Localization_ES,
     columns,
     data: tableData,
-    state: { isLoading: isLoading || isLoadingTable, isSaving },
+    state: {
+      isLoading: isLoading || isLoadingTable,
+      isSaving,
+      ...(enableGrouping ? { grouping } : {}),
+    },
+    onGroupingChange: enableGrouping ? setGrouping : undefined,
     muiTablePaperProps: {
       sx: {
         width: "100%",

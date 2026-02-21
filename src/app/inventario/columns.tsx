@@ -41,6 +41,7 @@ export const productColumns = (
       accessorKey: "brand",
       header: "Marca",
       size: 40,
+      enableGrouping: true,
       muiEditTextFieldProps: ({ cell }: { cell: any }) => {
         console.log({ cell });
         return {
