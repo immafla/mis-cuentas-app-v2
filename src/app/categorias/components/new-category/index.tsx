@@ -40,6 +40,9 @@ export const NewCategoryModal: FC<{
       confirmButtonText: "Sí, salir",
       cancelButtonText: "No, continuar",
       confirmButtonColor: "#d33",
+      didOpen: (popup) => {
+        popup.parentElement?.style.setProperty("z-index", "1600");
+      },
     });
 
     return result.isConfirmed;
