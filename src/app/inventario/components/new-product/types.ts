@@ -14,5 +14,4 @@ export type NewProductModalProps = {
   onClose: () => void;
   onSubmit: (values: Product) => void | Promise<void>;
   open: boolean;
-  existingProductNames: string[];
 };

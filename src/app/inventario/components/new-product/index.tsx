@@ -2,12 +2,11 @@ import React, { FC } from "react";
 import { Modal } from "@/components/Modal";
 import styles from "./styles.module.css";
 import {
+  Autocomplete,
   FormHelperText,
-  MenuItem,
   TextField,
   FormControl,
   InputLabel,
-  Select,
   Box,
   InputAdornment,
   OutlinedInput,
@@ -15,13 +14,7 @@ import {
 import { NewProductModalProps } from "./types";
 import { useNewProductModal } from "./hooks/useNewProductModal";
 
-export const NewProductModal: FC<NewProductModalProps> = ({
-  columns,
-  open,
-  onClose,
-  onSubmit,
-  existingProductNames,
-}) => {
+export const NewProductModal: FC<NewProductModalProps> = ({ columns, open, onClose, onSubmit }) => {
   const {
     brandList,
     bussinesCategoryList,
@@ -34,49 +27,45 @@ export const NewProductModal: FC<NewProductModalProps> = ({
     handleFieldChange,
     handleBrandChange,
     handleCategoryChange,
-  } = useNewProductModal({ columns, existingProductNames, onSubmit });
+  } = useNewProductModal({ columns, onSubmit });
 
   return (
     <Modal open={open} onClose={onClose} onSubmit={onSubmitModal} title="Crear nuevo producto">
       <Box className={styles.container}>
-        <FormControl fullWidth error={Boolean(errors.category)}>
-          <InputLabel id="category-label">Categoría / Tipo de Licor</InputLabel>
-          <Select
-            labelId="category-label"
-            id="category"
-            value={categorySelected}
-            label="Categoría / Tipo de Licor"
-            onChange={(event) => {
-              handleCategoryChange(String(event.target.value));
-            }}
-          >
-            {bussinesCategoryList.map((element) => (
-              <MenuItem key={element.value} value={element.value}>
-                {element.label}
-              </MenuItem>
-            ))}
-          </Select>
-          <FormHelperText>{errors.category}</FormHelperText>
-        </FormControl>
-        <FormControl fullWidth error={Boolean(errors.brand)}>
-          <InputLabel id="brand-label">Marca / Fabricante</InputLabel>
-          <Select
-            labelId="brand-label"
-            id="brand"
-            value={brandSelected}
-            label="Marca / Fabricante"
-            onChange={(event) => {
-              handleBrandChange(String(event.target.value));
-            }}
-          >
-            {brandList.map((element) => (
-              <MenuItem key={element.value} value={element.value}>
-                {element.label}
-              </MenuItem>
-            ))}
-          </Select>
-          <FormHelperText>{errors.brand}</FormHelperText>
-        </FormControl>
+        <Autocomplete
+          options={bussinesCategoryList}
+          getOptionLabel={(option) => option.label}
+          isOptionEqualToValue={(option, value) => option.value === value.value}
+          value={bussinesCategoryList.find((option) => option.value === categorySelected) ?? null}
+          onChange={(_, selectedOption) => {
+            handleCategoryChange(selectedOption?.value ?? "");
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Categoría / Tipo de Licor"
+              error={Boolean(errors.category)}
+              helperText={errors.category ?? ""}
+            />
+          )}
+        />
+        <Autocomplete
+          options={brandList}
+          getOptionLabel={(option) => option.label}
+          isOptionEqualToValue={(option, value) => option.value === value.value}
+          value={brandList.find((option) => option.value === brandSelected) ?? null}
+          onChange={(_, selectedOption) => {
+            handleBrandChange(selectedOption?.value ?? "");
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Marca / Fabricante"
+              error={Boolean(errors.brand)}
+              helperText={errors.brand ?? ""}
+            />
+          )}
+        />
         {formColumns.map((column) => {
           const key = String(column.accessorKey ?? "");
 

@@ -216,23 +216,6 @@ export const useInventory = () => {
           return;
         }
 
-        const duplicatedName = tableData.some(
-          (product) =>
-            String(product.name ?? "")
-              .trim()
-              .replaceAll(/\s+/g, " ")
-              .toUpperCase() === normalizedName,
-        );
-
-        if (duplicatedName) {
-          await MySwal.fire({
-            icon: "warning",
-            title: "Producto duplicado",
-            text: "Ya existe un producto con ese nombre.",
-          });
-          return;
-        }
-
         setIsLoading(true);
         const result = await createProduct({
           ...values,
@@ -264,7 +247,7 @@ export const useInventory = () => {
         setIsLoading(false);
       }
     },
-    [fetchListProductsCurrent, tableData],
+    [fetchListProductsCurrent],
   );
 
   const columns = useMemo<MRT_ColumnDef<ProductWithId>[]>(

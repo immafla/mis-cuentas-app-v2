@@ -1,7 +1,7 @@
 "use server";
 
 import connectDB from "@/lib/mongodb";
-import Product, { IProduct } from "@/lib/models/Product";
+import Product from "@/lib/models/Product";
 import { Types } from "mongoose";
 
 type ProductCreateInput = {
@@ -75,15 +75,6 @@ export async function createProduct(input: ProductCreateInput) {
         success: false,
         error: "Invalid content",
         message: "El contenido en ml es inválido.",
-      };
-    }
-
-    const existingByName = await Product.findOne({ name: normalizedName }).lean();
-    if (existingByName) {
-      return {
-        success: false,
-        error: "Duplicated product name",
-        message: "Ya existe un producto con ese nombre",
       };
     }
 

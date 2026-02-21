@@ -7,7 +7,6 @@ import { ProductFormValues, SelectOption } from "../types";
 
 type UseNewProductModalParams = {
   columns: MRT_ColumnDef<ProductWithId>[];
-  existingProductNames: string[];
   onSubmit: (values: Product) => void | Promise<void>;
 };
 
@@ -17,11 +16,7 @@ const getInitialValues = (columns: MRT_ColumnDef<ProductWithId>[]): ProductFormV
     return acc;
   }, {} as ProductFormValues);
 
-export const useNewProductModal = ({
-  columns,
-  existingProductNames,
-  onSubmit,
-}: UseNewProductModalParams) => {
+export const useNewProductModal = ({ columns, onSubmit }: UseNewProductModalParams) => {
   const apiService = useMemo(() => new ApiService(), []);
 
   const [brandList, setBrandList] = useState<SelectOption[]>([]);
@@ -40,16 +35,6 @@ export const useNewProductModal = ({
           column.accessorKey !== "category",
       ),
     [columns],
-  );
-
-  const existingNamesSet = useMemo(
-    () =>
-      new Set(
-        existingProductNames
-          .map((name) => name.trim().replaceAll(/\s+/g, " ").toUpperCase())
-          .filter(Boolean),
-      ),
-    [existingProductNames],
   );
 
   const handleFieldChange = useCallback((name: string, value: string) => {
@@ -93,13 +78,11 @@ export const useNewProductModal = ({
 
     if (!normalizedName) {
       nextErrors.name = "Campo requerido";
-    } else if (existingNamesSet.has(normalizedName)) {
-      nextErrors.name = "Ya existe un producto con este nombre";
     }
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
-  }, [brandSelected, categorySelected, existingNamesSet, formColumns, values]);
+  }, [brandSelected, categorySelected, formColumns, values]);
 
   const onSubmitModal = useCallback(async () => {
     const isValid = validateForm();
