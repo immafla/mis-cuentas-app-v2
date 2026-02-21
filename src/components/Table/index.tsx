@@ -173,6 +173,7 @@ const Table = ({
     initialState: {
       density: "compact",
       showGlobalFilter: true,
+      pagination: { pageIndex: 0, pageSize: 20 },
       ...(enableGrouping && initialGrouping ? { grouping: initialGrouping, expanded: {} } : {}),
     },
     editDisplayMode: "modal",
