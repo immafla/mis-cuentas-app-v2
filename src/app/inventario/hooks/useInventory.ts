@@ -16,6 +16,7 @@ export type Product = {
   name: string;
   brand: string;
   category: string;
+  content?: string | number;
   sale_price: number;
   amount: number;
 };
@@ -108,6 +109,7 @@ export const useInventory = () => {
           name: String(values.name ?? ""),
           brand: brandId ?? String(values.brand ?? ""),
           category: categoryId ?? String(values.category ?? ""),
+          content: String(values.content ?? "").trim(),
           sale_price: String(values.sale_price ?? 0),
           bar_code: String(values.bar_code ?? ""),
         };

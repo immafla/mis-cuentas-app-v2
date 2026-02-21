@@ -73,7 +73,7 @@ export const useNewProductModal = ({
     formColumns.forEach((column) => {
       const key = String(column.accessorKey ?? "");
       const value = String(values[key] ?? "").trim();
-      if (!value) {
+      if (key !== "content" && !value) {
         nextErrors[key] = "Campo requerido";
       }
     });

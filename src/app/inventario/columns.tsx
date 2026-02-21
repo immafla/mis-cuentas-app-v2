@@ -12,43 +12,6 @@ export const productColumns = (
 ): MRT_ColumnDef<any>[] => {
   return [
     {
-      accessorKey: "name",
-      header: "Nombre del producto",
-      size: 140,
-      muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
-        variant: "outlined",
-        ...getCommonEditTextFieldProps(cell),
-      }),
-    },
-    {
-      accessorKey: "brand",
-      header: "Marca",
-      size: 40,
-      muiEditTextFieldProps: ({ cell }: { cell: any }) => {
-        console.log({ cell });
-        return {
-          variant: "outlined",
-          select: true, //change to select for a dropdown
-          children: brands.map((brand) => (
-            <MenuItem key={brand._id} value={brand.name}>
-              {brand.name}
-            </MenuItem>
-          )),
-        };
-      },
-    },
-    {
-      accessorKey: "amount",
-      header: "Disponibles",
-      size: 2,
-      enableEditing: false,
-      muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
-        variant: "outlined",
-        ...getCommonEditTextFieldProps(cell),
-      }),
-      Cell: (props: any) => <AmountCell value={props.cell.getValue() as number} />,
-    },
-    {
       accessorKey: "category",
       header: "Categoria",
       size: 40,
@@ -73,6 +36,52 @@ export const productColumns = (
         // Si ya es un nombre, mostrarlo directamente
         return <Box>{categoryValue}</Box>;
       },
+    },
+    {
+      accessorKey: "brand",
+      header: "Marca",
+      size: 40,
+      muiEditTextFieldProps: ({ cell }: { cell: any }) => {
+        console.log({ cell });
+        return {
+          variant: "outlined",
+          select: true, //change to select for a dropdown
+          children: brands.map((brand) => (
+            <MenuItem key={brand._id} value={brand.name}>
+              {brand.name}
+            </MenuItem>
+          )),
+        };
+      },
+    },
+    {
+      accessorKey: "name",
+      header: "Atributo",
+      size: 140,
+      muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
+        variant: "outlined",
+        ...getCommonEditTextFieldProps(cell),
+      }),
+    },
+    {
+      accessorKey: "content",
+      header: "Contenido",
+      size: 140,
+      muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
+        variant: "outlined",
+        ...getCommonEditTextFieldProps(cell),
+      }),
+    },
+    {
+      accessorKey: "amount",
+      header: "Disponibles",
+      size: 2,
+      enableEditing: false,
+      muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
+        variant: "outlined",
+        ...getCommonEditTextFieldProps(cell),
+      }),
+      Cell: (props: any) => <AmountCell value={props.cell.getValue() as number} />,
     },
     {
       accessorKey: "sale_price",

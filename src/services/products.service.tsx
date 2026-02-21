@@ -11,6 +11,7 @@ type ProductCreateInput = {
   category: string | Types.ObjectId;
   sale_price: string;
   bar_code: string;
+  content?: string | number;
 };
 
 type ProductUpdate = Partial<ProductCreateInput>;
@@ -41,6 +42,8 @@ export async function createProduct(input: ProductCreateInput) {
     const normalizedBrand = String(input?.brand ?? "").trim();
     const normalizedCategory = String(input?.category ?? "").trim();
     const normalizedSalePrice = parseNumericInput(input?.sale_price);
+    const normalizedContentRaw = String(input?.content ?? "").trim();
+    const normalizedContent = normalizedContentRaw ? parseNumericInput(normalizedContentRaw) : null;
 
     const hasRequiredFields =
       normalizedName.length > 0 &&
@@ -64,6 +67,17 @@ export async function createProduct(input: ProductCreateInput) {
       };
     }
 
+    if (
+      normalizedContentRaw &&
+      (!Number.isFinite(normalizedContent) || Number(normalizedContent) <= 0)
+    ) {
+      return {
+        success: false,
+        error: "Invalid content",
+        message: "El contenido en ml es inválido.",
+      };
+    }
+
     const existingByName = await Product.findOne({ name: normalizedName }).lean();
     if (existingByName) {
       return {
@@ -81,6 +95,7 @@ export async function createProduct(input: ProductCreateInput) {
       bar_code: normalizedBarCode,
       sale_price: String(normalizedSalePrice),
       amount: Number(input?.amount ?? 0),
+      content: normalizedContentRaw ? Number(normalizedContent) : undefined,
     });
 
     return {
@@ -103,11 +118,82 @@ export async function updateProductById(id: string, update: ProductUpdate) {
     await connectDB();
 
     const updateData: ProductUpdate = { ...update };
+    const fieldsToSet: Record<string, unknown> = {};
+    let unsetContent = false;
+
     if (typeof updateData.name === "string") {
-      updateData.name = updateData.name.toUpperCase();
+      fieldsToSet.name = updateData.name.toUpperCase();
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
+    if (updateData.brand !== undefined) {
+      fieldsToSet.brand = String(updateData.brand ?? "").trim();
+    }
+
+    if (updateData.category !== undefined) {
+      fieldsToSet.category = String(updateData.category ?? "").trim();
+    }
+
+    if (updateData.bar_code !== undefined) {
+      fieldsToSet.bar_code = String(updateData.bar_code ?? "").trim();
+    }
+
+    if (updateData.sale_price !== undefined) {
+      const normalizedSalePrice = parseNumericInput(updateData.sale_price);
+
+      if (!Number.isFinite(normalizedSalePrice) || normalizedSalePrice < 0) {
+        return {
+          success: false,
+          error: "Invalid sale price",
+          message: "El precio de venta es inválido.",
+        };
+      }
+
+      fieldsToSet.sale_price = String(normalizedSalePrice);
+    }
+
+    if (updateData.amount !== undefined) {
+      fieldsToSet.amount = Number(updateData.amount ?? 0);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updateData, "content")) {
+      const normalizedContentRaw = String(updateData.content ?? "").trim();
+
+      if (!normalizedContentRaw) {
+        unsetContent = true;
+      } else {
+        const normalizedContent = parseNumericInput(normalizedContentRaw);
+
+        if (!Number.isFinite(normalizedContent) || Number(normalizedContent) <= 0) {
+          return {
+            success: false,
+            error: "Invalid content",
+            message: "El contenido en ml es inválido.",
+          };
+        }
+
+        fieldsToSet.content = Number(normalizedContent);
+      }
+    }
+
+    const updateQuery: Record<string, unknown> = {};
+
+    if (Object.keys(fieldsToSet).length) {
+      updateQuery.$set = fieldsToSet;
+    }
+
+    if (unsetContent) {
+      updateQuery.$unset = { content: "" };
+    }
+
+    if (!Object.keys(updateQuery).length) {
+      return {
+        success: false,
+        error: "No update fields",
+        message: "No hay campos válidos para actualizar.",
+      };
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(id, updateQuery, {
       new: true,
       runValidators: true,
     }).lean();

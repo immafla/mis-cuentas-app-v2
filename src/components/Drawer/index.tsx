@@ -157,12 +157,6 @@ export const MiniDrawer = ({
         path: "/inventario",
       },
       {
-        label: "Lotes",
-        icon: <Inventory2Icon />,
-        action: showLots,
-        path: "/lotes",
-      },
-      {
         label: "Marcas",
         icon: <AssignmentIcon />,
         action: showAddBrand,
@@ -174,6 +168,18 @@ export const MiniDrawer = ({
         action: showCategories,
         path: "/categorias",
       },
+    ],
+    [showAddBrand, showCategories, showProduct],
+  );
+
+  const logisticsItems = React.useMemo<DrawerItem[]>(
+    () => [
+      {
+        label: "Lotes",
+        icon: <Inventory2Icon />,
+        action: showLots,
+        path: "/lotes",
+      },
       {
         label: "Proveedores",
         icon: <LocalShippingIcon />,
@@ -181,7 +187,7 @@ export const MiniDrawer = ({
         path: "/proveedores",
       },
     ],
-    [showAddBrand, showCategories, showLots, showProduct, showSuppliers],
+    [showLots, showSuppliers],
   );
 
   const listItemButtonSx = React.useMemo(
@@ -237,7 +243,9 @@ export const MiniDrawer = ({
     setOpen(false);
   }, []);
 
-  const isSecondaryActive = secondaryItems.some((item) => isActive(item.path));
+  const isSecondaryActive = [...secondaryItems, ...logisticsItems].some((item) =>
+    isActive(item.path),
+  );
 
   const mobileBottomNavValue = React.useMemo(() => {
     const mainIndex = mainItems.findIndex((item) => isActive(item.path));
@@ -367,6 +375,22 @@ export const MiniDrawer = ({
               <ListItemText>{item.label}</ListItemText>
             </MenuItem>
           ))}
+
+          <Divider />
+
+          {logisticsItems.map((item) => (
+            <MenuItem
+              key={item.label}
+              selected={Boolean(isActive(item.path))}
+              onClick={() => {
+                item.action();
+                setMoreMenuAnchor(null);
+              }}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText>{item.label}</ListItemText>
+            </MenuItem>
+          ))}
         </Menu>
       </Box>
     );
@@ -438,6 +462,8 @@ export const MiniDrawer = ({
         <List>{renderItems(mainItems)}</List>
         <Divider sx={{ borderColor: "divider" }} />
         <List>{renderItems(secondaryItems)}</List>
+        <Divider sx={{ borderColor: "divider" }} />
+        <List>{renderItems(logisticsItems)}</List>
 
         <Box sx={{ mt: "auto", pb: 1 }}>
           <Divider sx={{ borderColor: "divider" }} />

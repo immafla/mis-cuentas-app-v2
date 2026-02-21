@@ -66,6 +66,21 @@ type LotAllocation = {
   unitCost: number;
 };
 
+export type DashboardTrendMetric = "grossSales" | "netProfit";
+
+export type DashboardTrendPoint = {
+  date: string;
+  label: string;
+  grossSales: number;
+  netProfit: number;
+};
+
+export type DashboardSalesTrendFilters = {
+  rangeDays?: number;
+  startDate?: string;
+  endDate?: string;
+};
+
 const consumeProductFromLots = (
   item: {
     productId: string;
@@ -149,20 +164,197 @@ const consumeProductFromLots = (
 };
 
 const BOGOTA_UTC_OFFSET_HOURS = -5;
+const MAX_TREND_RANGE_DAYS = 365;
+
+const pad2 = (value: number) => String(value).padStart(2, "0");
+
+const getBogotaDateParts = (date: Date) => {
+  const bogotaDate = new Date(date.getTime() + BOGOTA_UTC_OFFSET_HOURS * 60 * 60 * 1000);
+
+  return {
+    year: bogotaDate.getUTCFullYear(),
+    month: bogotaDate.getUTCMonth(),
+    day: bogotaDate.getUTCDate(),
+  };
+};
+
+const buildBogotaDateKey = (year: number, month: number, day: number) =>
+  `${year}-${pad2(month + 1)}-${pad2(day)}`;
+
+const parseDateKey = (value: string) => {
+  const match = String(value ?? "")
+    .trim()
+    .match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return null;
+  }
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  const isSameDate =
+    utcDate.getUTCFullYear() === year &&
+    utcDate.getUTCMonth() === month - 1 &&
+    utcDate.getUTCDate() === day;
+
+  if (!isSameDate) {
+    return null;
+  }
+
+  return {
+    year,
+    month: month - 1,
+    day,
+  };
+};
+
+const buildBogotaBoundaryUtc = (year: number, month: number, day: number) =>
+  new Date(Date.UTC(year, month, day, -BOGOTA_UTC_OFFSET_HOURS, 0, 0, 0));
 
 const getBogotaDayRange = () => {
   const now = new Date();
-  const bogotaNow = new Date(now.getTime() + BOGOTA_UTC_OFFSET_HOURS * 60 * 60 * 1000);
-
-  const year = bogotaNow.getUTCFullYear();
-  const month = bogotaNow.getUTCMonth();
-  const day = bogotaNow.getUTCDate();
+  const { year, month, day } = getBogotaDateParts(now);
 
   const dayStartUtc = new Date(Date.UTC(year, month, day, -BOGOTA_UTC_OFFSET_HOURS, 0, 0, 0));
   const dayEndUtc = new Date(Date.UTC(year, month, day + 1, -BOGOTA_UTC_OFFSET_HOURS, 0, 0, 0));
 
   return { dayStartUtc, dayEndUtc };
 };
+
+export async function getDashboardSalesTrend(filters: DashboardSalesTrendFilters = {}) {
+  try {
+    await connectDB();
+
+    const now = new Date();
+    const nowParts = getBogotaDateParts(now);
+
+    const parsedStart = filters.startDate ? parseDateKey(filters.startDate) : null;
+    const parsedEnd = filters.endDate ? parseDateKey(filters.endDate) : null;
+
+    const hasCustomRange = Boolean(parsedStart && parsedEnd);
+
+    let rangeStartUtc = new Date(
+      Date.UTC(
+        nowParts.year,
+        nowParts.month,
+        nowParts.day -
+          (Math.min(
+            Math.max(Math.floor(Number(filters.rangeDays) || 30), 1),
+            MAX_TREND_RANGE_DAYS,
+          ) -
+            1),
+        -BOGOTA_UTC_OFFSET_HOURS,
+        0,
+        0,
+        0,
+      ),
+    );
+    let rangeEndUtc = buildBogotaBoundaryUtc(nowParts.year, nowParts.month, nowParts.day + 1);
+
+    if (hasCustomRange && parsedStart && parsedEnd) {
+      const customStartUtc = buildBogotaBoundaryUtc(
+        parsedStart.year,
+        parsedStart.month,
+        parsedStart.day,
+      );
+      const customEndExclusiveUtc = buildBogotaBoundaryUtc(
+        parsedEnd.year,
+        parsedEnd.month,
+        parsedEnd.day + 1,
+      );
+
+      if (customStartUtc < customEndExclusiveUtc) {
+        const requestedDays = Math.ceil(
+          (customEndExclusiveUtc.getTime() - customStartUtc.getTime()) / (24 * 60 * 60 * 1000),
+        );
+
+        if (requestedDays > MAX_TREND_RANGE_DAYS) {
+          rangeStartUtc = new Date(customEndExclusiveUtc.getTime());
+          rangeStartUtc.setUTCDate(rangeStartUtc.getUTCDate() - MAX_TREND_RANGE_DAYS);
+        } else {
+          rangeStartUtc = customStartUtc;
+        }
+
+        rangeEndUtc = customEndExclusiveUtc;
+      }
+    }
+
+    const safeRange = Math.max(
+      1,
+      Math.ceil((rangeEndUtc.getTime() - rangeStartUtc.getTime()) / (24 * 60 * 60 * 1000)),
+    );
+
+    const pointsByDate = new Map<string, DashboardTrendPoint>();
+
+    for (let index = 0; index < safeRange; index += 1) {
+      const cursor = new Date(rangeStartUtc.getTime());
+      cursor.setUTCDate(cursor.getUTCDate() + index);
+
+      const cursorParts = getBogotaDateParts(cursor);
+      const key = buildBogotaDateKey(cursorParts.year, cursorParts.month, cursorParts.day);
+
+      pointsByDate.set(key, {
+        date: key,
+        label: `${pad2(cursorParts.day)}/${pad2(cursorParts.month + 1)}`,
+        grossSales: 0,
+        netProfit: 0,
+      });
+    }
+
+    const sales = await Sale.find({ soldAt: { $gte: rangeStartUtc, $lt: rangeEndUtc } })
+      .select("soldAt total totalProfit totalCost")
+      .lean();
+
+    for (const sale of sales) {
+      const soldAt = new Date(sale.soldAt);
+      const soldAtParts = getBogotaDateParts(soldAt);
+      const dateKey = buildBogotaDateKey(soldAtParts.year, soldAtParts.month, soldAtParts.day);
+      const point = pointsByDate.get(dateKey);
+
+      if (!point) {
+        continue;
+      }
+
+      const grossSales = Number(sale.total ?? 0);
+      const netProfit = Number(
+        sale.totalProfit ?? Number(sale.total ?? 0) - Number(sale.totalCost ?? 0),
+      );
+
+      point.grossSales += Number.isFinite(grossSales) ? grossSales : 0;
+      point.netProfit += Number.isFinite(netProfit) ? netProfit : 0;
+    }
+
+    return {
+      success: true,
+      data: {
+        rangeDays: safeRange,
+        points: Array.from(pointsByDate.values()),
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching dashboard sales trend:", error);
+    return {
+      success: false,
+      error: "Failed to fetch dashboard sales trend",
+      message: error instanceof Error ? error.message : "Unknown error",
+      data: {
+        rangeDays: 30,
+        points: [] as DashboardTrendPoint[],
+      },
+    };
+  }
+}
 
 export async function createSaleRecord(items: SaleInputItem[]) {
   try {

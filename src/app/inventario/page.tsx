@@ -50,7 +50,7 @@ export default function InventarioPage() {
             handleDeleteRow={handleDeleteRow}
             setCreateModalOpen={setCreateModalOpen}
             enableGrouping={true}
-            groupedColumnMode="remove"
+            groupedColumnMode="reorder"
             initialGrouping={["category"]}
           />
           {createModalOpen && (

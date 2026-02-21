@@ -39,6 +39,44 @@ export const NewProductModal: FC<NewProductModalProps> = ({
   return (
     <Modal open={open} onClose={onClose} onSubmit={onSubmitModal} title="Crear nuevo producto">
       <Box className={styles.container}>
+        <FormControl fullWidth error={Boolean(errors.category)}>
+          <InputLabel id="category-label">Categoría / Tipo de Licor</InputLabel>
+          <Select
+            labelId="category-label"
+            id="category"
+            value={categorySelected}
+            label="Categoría / Tipo de Licor"
+            onChange={(event) => {
+              handleCategoryChange(String(event.target.value));
+            }}
+          >
+            {bussinesCategoryList.map((element) => (
+              <MenuItem key={element.value} value={element.value}>
+                {element.label}
+              </MenuItem>
+            ))}
+          </Select>
+          <FormHelperText>{errors.category}</FormHelperText>
+        </FormControl>
+        <FormControl fullWidth error={Boolean(errors.brand)}>
+          <InputLabel id="brand-label">Marca / Fabricante</InputLabel>
+          <Select
+            labelId="brand-label"
+            id="brand"
+            value={brandSelected}
+            label="Marca / Fabricante"
+            onChange={(event) => {
+              handleBrandChange(String(event.target.value));
+            }}
+          >
+            {brandList.map((element) => (
+              <MenuItem key={element.value} value={element.value}>
+                {element.label}
+              </MenuItem>
+            ))}
+          </Select>
+          <FormHelperText>{errors.brand}</FormHelperText>
+        </FormControl>
         {formColumns.map((column) => {
           const key = String(column.accessorKey ?? "");
 
@@ -54,6 +92,29 @@ export const NewProductModal: FC<NewProductModalProps> = ({
                 id={column.accessorKey as string}
                 name={column.accessorKey as string}
                 startAdornment={<InputAdornment position="start">$</InputAdornment>}
+                label={column.header}
+                value={values[key] ?? ""}
+                error={Boolean(errors[key])}
+                onChange={(e) => {
+                  const { name, value } = e.target;
+                  handleFieldChange(name, value);
+                }}
+              />
+              <FormHelperText error>{errors[key]}</FormHelperText>
+            </FormControl>
+          ) : column.accessorKey == "content" ? (
+            <FormControl
+              key={key}
+              fullWidth
+              className={column.accessorKey as string}
+              id={column.accessorKey as string}
+            >
+              <InputLabel htmlFor="outlined-adornment-content">{column.header}</InputLabel>
+              <OutlinedInput
+                id={column.accessorKey as string}
+                name={column.accessorKey as string}
+                type="number"
+                endAdornment={<InputAdornment position="end">ml</InputAdornment>}
                 label={column.header}
                 value={values[key] ?? ""}
                 error={Boolean(errors[key])}
@@ -82,46 +143,6 @@ export const NewProductModal: FC<NewProductModalProps> = ({
             />
           );
         })}
-
-        <FormControl fullWidth error={Boolean(errors.brand)}>
-          <InputLabel id="brand-label">Marca</InputLabel>
-          <Select
-            labelId="brand-label"
-            id="brand"
-            value={brandSelected}
-            label="Brand"
-            onChange={(event) => {
-              handleBrandChange(String(event.target.value));
-            }}
-          >
-            {brandList.map((element) => (
-              <MenuItem key={element.value} value={element.value}>
-                {element.label}
-              </MenuItem>
-            ))}
-          </Select>
-          <FormHelperText>{errors.brand}</FormHelperText>
-        </FormControl>
-
-        <FormControl fullWidth error={Boolean(errors.category)}>
-          <InputLabel id="category-label">Categoria</InputLabel>
-          <Select
-            labelId="category-label"
-            id="category"
-            value={categorySelected}
-            label="Category"
-            onChange={(event) => {
-              handleCategoryChange(String(event.target.value));
-            }}
-          >
-            {bussinesCategoryList.map((element) => (
-              <MenuItem key={element.value} value={element.value}>
-                {element.label}
-              </MenuItem>
-            ))}
-          </Select>
-          <FormHelperText>{errors.category}</FormHelperText>
-        </FormControl>
       </Box>
     </Modal>
   );

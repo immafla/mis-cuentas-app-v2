@@ -11,20 +11,71 @@ export async function GET(request: NextRequest) {
     const limitParam = Number(searchParams.get("limit") ?? "100");
     const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 50) : 10;
 
-    const filters = query
-      ? {
-          $or: [
-            { name: { $regex: query, $options: "i" } },
-            { bar_code: { $regex: query, $options: "i" } },
+    const products = await Product.aggregate([
+      {
+        $lookup: {
+          from: "brands",
+          let: { brandId: "$brand" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [{ $toString: "$_id" }, "$$brandId"],
+                },
+              },
+            },
+            { $project: { _id: 0, name: 1 } },
           ],
-        }
-      : {};
-
-    const products = await Product.find(filters).sort({ name: 1 }).limit(limit).lean();
+          as: "brandDoc",
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          pipeline: [{ $project: { _id: 0, name: 1 } }],
+          as: "categoryDoc",
+        },
+      },
+      {
+        $addFields: {
+          brand_name: {
+            $ifNull: [{ $arrayElemAt: ["$brandDoc.name", 0] }, ""],
+          },
+          category_name: {
+            $ifNull: [{ $arrayElemAt: ["$categoryDoc.name", 0] }, ""],
+          },
+        },
+      },
+      ...(query
+        ? [
+            {
+              $match: {
+                $or: [
+                  { name: { $regex: query, $options: "i" } },
+                  { bar_code: { $regex: query, $options: "i" } },
+                  { brand_name: { $regex: query, $options: "i" } },
+                  { category_name: { $regex: query, $options: "i" } },
+                ],
+              },
+            },
+          ]
+        : []),
+      { $sort: { name: 1 } },
+      { $limit: limit },
+      {
+        $project: {
+          brandDoc: 0,
+          categoryDoc: 0,
+        },
+      },
+    ]);
 
     const normalizedProducts = products.map((product) => ({
       ...product,
       _id: String(product._id),
+      category: product.category ? String(product.category) : product.category,
     }));
 
     return NextResponse.json(normalizedProducts);

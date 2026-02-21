@@ -20,6 +20,8 @@ export type ProductSearchOption = {
   sale_price: string;
   amount: number;
   bar_code: string;
+  brand_name?: string;
+  category_name?: string;
 };
 
 const initialSaleProducts: SaleLineItem[] = [];

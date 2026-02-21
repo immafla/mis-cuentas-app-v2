@@ -7,6 +7,7 @@ export interface IProduct extends Document {
   category: mongoose.Types.ObjectId;
   sale_price: string;
   bar_code: string;
+  content?: number;
 }
 
 const ProductSchema = new Schema<IProduct>(
@@ -17,6 +18,7 @@ const ProductSchema = new Schema<IProduct>(
     category: { type: Schema.Types.ObjectId, ref: "Categories", required: true },
     sale_price: { type: String, required: true },
     bar_code: { type: String, required: true },
+    content: { type: Number, required: false },
   },
   {
     timestamps: true, // Esto crea automáticamente createdAt y updatedAt

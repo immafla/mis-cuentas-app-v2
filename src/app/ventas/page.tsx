@@ -131,6 +131,9 @@ const NewSale = () => {
                       <Stack sx={{ width: "100%" }}>
                         <Typography fontWeight={600}>{option.name}</Typography>
                         <Typography variant="caption" color="text.secondary">
+                          {`Marca: ${option.brand_name || "N/A"} • Categoría: ${option.category_name || "N/A"}`}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
                           {`Cod.: ${option.bar_code} • Stock: ${option.amount} • $ ${option.sale_price}`}
                         </Typography>
                       </Stack>
@@ -253,8 +256,17 @@ const NewSale = () => {
                             },
                           }}
                         />
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          sx={{ flexWrap: "wrap" }}
+                        >
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontWeight: 500 }}
+                          >
                             Cant.
                           </Typography>
                           <Button

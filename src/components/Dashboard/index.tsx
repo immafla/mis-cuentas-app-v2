@@ -8,8 +8,10 @@ import {
   DialogTitle,
   Chip,
   Container,
+  Fade,
   Divider,
   Grid,
+  Grow,
   LinearProgress,
   List,
   ListItem,
@@ -22,6 +24,7 @@ import {
 } from "@mui/material";
 import useDashboard from "./hooks/useDashboard";
 import { DashboardSale } from "./interfaces";
+import SalesTrendChart from "./SalesTrendChart";
 
 const Dashboard = () => {
   const { isLoading, recentSales, kpis, glassCardSx } = useDashboard();
@@ -46,140 +49,177 @@ const Dashboard = () => {
     >
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3 } }}>
         <Stack spacing={{ xs: 2, sm: 3 }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700 }}>
-              Información de ventas
-            </Typography>
-            <Typography color="text.secondary">Resumen rápido del desempeño del día.</Typography>
-          </Box>
+          <Fade in timeout={350}>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                Información de ventas
+              </Typography>
+              <Typography color="text.secondary">Resumen rápido del desempeño del día.</Typography>
+            </Box>
+          </Fade>
 
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-              <Paper elevation={0} sx={glassCardSx}>
-                <Stack spacing={1}>
-                  <Typography color="text.secondary" variant="subtitle2">
-                    Ventas del día
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                    {`$ ${kpis.totalSales}`}
-                  </Typography>
-                  <Typography color="text.secondary">
-                    {`${kpis.salesCount} transacciones`}
-                  </Typography>
-                </Stack>
-              </Paper>
+              <Grow in timeout={420}>
+                <Paper elevation={0} sx={glassCardSx}>
+                  <Stack spacing={1}>
+                    <Typography color="text.secondary" variant="subtitle2">
+                      Ventas del día
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                      {`$ ${kpis.totalSales}`}
+                    </Typography>
+                    <Typography color="text.secondary">
+                      {`${kpis.salesCount} transacciones`}
+                    </Typography>
+                  </Stack>
+                </Paper>
+              </Grow>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-              <Paper elevation={0} sx={glassCardSx}>
-                <Stack spacing={1}>
-                  <Typography color="text.secondary" variant="subtitle2">
-                    Productos vendidos
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                    {kpis.totalItems}
-                  </Typography>
-                  <Typography color="text.secondary">Total de unidades</Typography>
-                </Stack>
-              </Paper>
+              <Grow in timeout={520}>
+                <Paper elevation={0} sx={glassCardSx}>
+                  <Stack spacing={1}>
+                    <Typography color="text.secondary" variant="subtitle2">
+                      Productos vendidos
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                      {kpis.totalItems}
+                    </Typography>
+                    <Typography color="text.secondary">Total de unidades</Typography>
+                  </Stack>
+                </Paper>
+              </Grow>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-              <Paper elevation={0} sx={glassCardSx}>
-                <Stack spacing={1}>
-                  <Typography color="text.secondary" variant="subtitle2">
-                    Ganancia neta
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                    {`$ ${kpis.totalProfit}`}
-                  </Typography>
-                  <Typography color="text.secondary">{`Costo total: $ ${kpis.totalCost}`}</Typography>
-                </Stack>
-              </Paper>
+              <Grow in timeout={620}>
+                <Paper elevation={0} sx={glassCardSx}>
+                  <Stack spacing={1}>
+                    <Typography color="text.secondary" variant="subtitle2">
+                      Ganancia neta
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                      {`$ ${kpis.totalProfit}`}
+                    </Typography>
+                    <Typography color="text.secondary">{`Costo total: $ ${kpis.totalCost}`}</Typography>
+                  </Stack>
+                </Paper>
+              </Grow>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-              <Paper elevation={0} sx={glassCardSx}>
-                <Stack spacing={1}>
-                  <Typography color="text.secondary" variant="subtitle2">
-                    Margen neto
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                    {`${kpis.netMarginPercent}%`}
-                  </Typography>
-                  <Typography color="text.secondary">Utilidad / ventas del día</Typography>
-                </Stack>
-              </Paper>
+              <Grow in timeout={720}>
+                <Paper elevation={0} sx={glassCardSx}>
+                  <Stack spacing={1}>
+                    <Typography color="text.secondary" variant="subtitle2">
+                      Margen neto
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                      {`${kpis.netMarginPercent}%`}
+                    </Typography>
+                    <Typography color="text.secondary">Utilidad / ventas del día</Typography>
+                  </Stack>
+                </Paper>
+              </Grow>
             </Grid>
           </Grid>
 
           <Grid container spacing={3}>
+            <Grid size={{ xs: 12 }}>
+              <Fade in timeout={820}>
+                <Box>
+                  <SalesTrendChart glassCardSx={glassCardSx} />
+                </Box>
+              </Fade>
+            </Grid>
+
             <Grid size={{ xs: 12, lg: 8 }}>
-              <Paper elevation={0} sx={{ ...glassCardSx, display: "flex", flexDirection: "column", maxHeight: { xs: 400, sm: 450, lg: "none" } }}>
-                <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ flexShrink: 0 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Ventas recientes
-                    </Typography>
-                    <Chip label="Hoy" size="small" color="primary" variant="outlined" />
-                  </Stack>
-                  <Divider />
-                  {isLoading ? (
-                    <Stack alignItems="center" justifyContent="center" sx={{ py: 4 }}>
-                      <CircularProgress size={28} />
+              <Fade in timeout={920}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    ...glassCardSx,
+                    display: "flex",
+                    flexDirection: "column",
+                    maxHeight: { xs: 400, sm: 450, lg: "none" },
+                  }}
+                >
+                  <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      sx={{ flexShrink: 0 }}
+                    >
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Ventas recientes
+                      </Typography>
+                      <Chip label="Hoy" size="small" color="primary" variant="outlined" />
                     </Stack>
-                  ) : (
-                    <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
-                      <List disablePadding>
-                        {recentSales.length === 0 && (
-                          <ListItem sx={{ px: 0 }}>
-                            <ListItemText
-                              primary="Sin ventas registradas"
-                              secondary="Cuando se registren ventas aparecerán aquí"
-                            />
-                          </ListItem>
-                        )}
-                        {recentSales.map((sale, index) => (
-                          <Box key={sale.id}>
-                            <ListItem disablePadding>
-                              <ListItemButton
-                                onClick={() => handleOpenSaleDetail(sale)}
-                                sx={{
-                                  px: 2,
-                                  borderRadius: 1,
-                                  "&:hover": { backgroundColor: "action.hover" },
-                                }}
-                              >
-                                <ListItemText
-                                  primary={sale.customer}
-                                  secondary={`${sale.items} items · ${new Date(sale.soldAt).toLocaleString("es-CO")} · Haz click para ver detalle`}
-                                />
-                                <Typography sx={{ fontWeight: 600 }}>{`$ ${sale.total}`}</Typography>
-                              </ListItemButton>
+                    <Divider />
+                    {isLoading ? (
+                      <Stack alignItems="center" justifyContent="center" sx={{ py: 4 }}>
+                        <CircularProgress size={28} />
+                      </Stack>
+                    ) : (
+                      <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+                        <List disablePadding>
+                          {recentSales.length === 0 && (
+                            <ListItem sx={{ px: 0 }}>
+                              <ListItemText
+                                primary="Sin ventas registradas"
+                                secondary="Cuando se registren ventas aparecerán aquí"
+                              />
                             </ListItem>
-                            {index < recentSales.length - 1 && <Divider />}
-                          </Box>
-                        ))}
-                      </List>
-                    </Box>
-                  )}
-                </Stack>
-              </Paper>
+                          )}
+                          {recentSales.map((sale, index) => (
+                            <Box key={sale.id}>
+                              <ListItem disablePadding>
+                                <ListItemButton
+                                  onClick={() => handleOpenSaleDetail(sale)}
+                                  sx={{
+                                    px: 2,
+                                    borderRadius: 1,
+                                    "&:hover": { backgroundColor: "action.hover" },
+                                  }}
+                                >
+                                  <ListItemText
+                                    primary={sale.customer}
+                                    secondary={`${sale.items} items · ${new Date(sale.soldAt).toLocaleString("es-CO")} · Haz click para ver detalle`}
+                                  />
+                                  <Typography
+                                    sx={{ fontWeight: 600 }}
+                                  >{`$ ${sale.total}`}</Typography>
+                                </ListItemButton>
+                              </ListItem>
+                              {index < recentSales.length - 1 && <Divider />}
+                            </Box>
+                          ))}
+                        </List>
+                      </Box>
+                    )}
+                  </Stack>
+                </Paper>
+              </Fade>
             </Grid>
             <Grid size={{ xs: 12, lg: 4 }}>
-              <Paper elevation={0} sx={glassCardSx}>
-                <Stack spacing={2}>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Meta diaria
-                  </Typography>
-                  <Typography color="text.secondary">$ 100000</Typography>
-                  <LinearProgress
-                    variant="determinate"
-                    value={kpis.goalProgress}
-                    sx={{ height: 10, borderRadius: 5 }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    {`${kpis.goalProgress}% completado`}
-                  </Typography>
-                </Stack>
-              </Paper>
+              <Fade in timeout={1020}>
+                <Paper elevation={0} sx={glassCardSx}>
+                  <Stack spacing={2}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      Meta diaria
+                    </Typography>
+                    <Typography color="text.secondary">$ 100000</Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={kpis.goalProgress}
+                      sx={{ height: 10, borderRadius: 5 }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      {`${kpis.goalProgress}% completado`}
+                    </Typography>
+                  </Stack>
+                </Paper>
+              </Fade>
             </Grid>
           </Grid>
         </Stack>
