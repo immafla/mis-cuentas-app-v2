@@ -66,9 +66,9 @@ export const lotsColumns = (): MRT_ColumnDef<LotRow>[] => [
           {details.map((item, i) => (
             <Box key={i}>
               <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.3 }}>
-                {item.name}
+                {[item.category_name, item.brand_name, item.name].filter(Boolean).join(" · ")}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color="text.secondary" display="block">
                 {`Restantes: ${item.remainingQuantity} · Compra: $ ${item.purchasePrice.toLocaleString("es-CO")}`}
               </Typography>
             </Box>

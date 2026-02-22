@@ -129,12 +129,18 @@ const NewSale = () => {
                   renderOption={(props, option) => (
                     <Box component="li" {...props} key={option._id}>
                       <Stack sx={{ width: "100%" }}>
-                        <Typography fontWeight={600}>{option.name}</Typography>
+                        <Typography
+                          fontWeight={600}
+                        >{`${option.category_name || "N/A"} ${option.brand_name || "N/A"} ${option.name}`}</Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {`Marca: ${option.brand_name || "N/A"} • Categoría: ${option.category_name || "N/A"}`}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {`Cod.: ${option.bar_code} • Stock: ${option.amount} • $ ${option.sale_price}`}
+                          {`Cod.: ${option.bar_code} • Stock: ${option.amount} • Precio: ${Number(
+                            option.sale_price ?? 0,
+                          ).toLocaleString("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}`}
                         </Typography>
                       </Stack>
                     </Box>
@@ -212,7 +218,7 @@ const NewSale = () => {
                               {`Precio venta unidad: $ ${Number(element.price ?? 0).toLocaleString("es-CO")}`}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {`Stock: ${element.amount}`}
+                              {` Stock: ${element.amount}`}
                             </Typography>
                           </>
                         }
@@ -227,27 +233,44 @@ const NewSale = () => {
                         }}
                       >
                         <Typography variant="h6" component="div" sx={{ lineHeight: 1.2 }}>
-                          {`$ ${element.price * element.quantity}`}
+                          {Number((element.price ?? 0) * (element.quantity ?? 0)).toLocaleString(
+                            "es-CO",
+                            {
+                              style: "currency",
+                              currency: "COP",
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            },
+                          )}
                         </Typography>
                         <TextField
                           size="small"
-                          type="number"
+                          type="text"
                           label="Precio venta"
-                          value={element.price}
-                          onChange={(event) =>
-                            handleSetProductPrice(element.id, Number(event.target.value))
-                          }
+                          value={Number(element.price ?? 0).toLocaleString("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                          onChange={(event) => {
+                            const rawValue = event.target.value;
+                            const parsedValue = Number(rawValue.replaceAll(/[^\d]/g, ""));
+                            handleSetProductPrice(
+                              element.id,
+                              Number.isFinite(parsedValue) ? parsedValue : 0,
+                            );
+                          }}
                           inputProps={{
                             min: 0,
-                            step: "0.01",
                             style: {
-                              width: 92,
+                              width: 118,
                               textAlign: "center",
                               padding: "4px 6px",
                             },
                           }}
                           sx={{
-                            width: { xs: 120, sm: 140 },
+                            width: { xs: 150, sm: 168 },
                             "& .MuiInputBase-root": {
                               height: { xs: 28, sm: 32 },
                             },
@@ -349,7 +372,12 @@ const NewSale = () => {
                     Total
                   </Typography>
                   <Typography variant="h5" component="div" sx={{ fontWeight: 700 }}>
-                    {`$ ${total}`}
+                    {Number(total ?? 0).toLocaleString("es-CO", {
+                      style: "currency",
+                      currency: "COP",
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
                   </Typography>
                 </Box>
                 <Button

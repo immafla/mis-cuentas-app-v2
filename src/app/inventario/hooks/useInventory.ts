@@ -23,7 +23,7 @@ export type Product = {
   brand: string;
   category: string;
   content?: string | number;
-  sale_price: number;
+  sale_price: string | number;
   amount: number;
 };
 
@@ -39,17 +39,10 @@ type Category = {
 
 export type ProductWithId = Product & { _id: string };
 
-const mapProduct = (product: ProductWithId, brands: Brand[], categories: Category[]) => {
-  const brandName = brands.find((brand) => brand._id === product.brand)?.name;
-  const categoryName = categories.find((category) => category._id === product.category)?.name;
-
-  return {
-    ...product,
-    sale_price: Number(product.sale_price ?? 0),
-    brand: brandName ?? product.brand,
-    category: categoryName ?? product.category,
-  };
-};
+const mapProduct = (product: ProductWithId) => ({
+  ...product,
+  sale_price: Number(product.sale_price ?? 0),
+});
 
 export const useInventory = () => {
   const [tableData, setTableData] = useState<ProductWithId[]>([]);
@@ -71,13 +64,28 @@ export const useInventory = () => {
       }
 
       const products: ProductWithId[] = productsResult.data as ProductWithId[];
+      const brandNameById = new Map(
+        brandList.map((brand) => [String(brand._id), String(brand.name)]),
+      );
+      const categoryNameById = new Map(
+        categoryList.map((category) => [String(category._id), String(category.name)]),
+      );
+
       const productsParsed = products
-        .map((element) => mapProduct(element, brandList, categoryList))
+        .map((element) => mapProduct(element))
         .sort((a, b) => {
-          const catCompare = String(a.category ?? "").localeCompare(String(b.category ?? ""), "es");
+          const categoryA =
+            categoryNameById.get(String(a.category ?? "")) ?? String(a.category ?? "");
+          const categoryB =
+            categoryNameById.get(String(b.category ?? "")) ?? String(b.category ?? "");
+          const catCompare = categoryA.localeCompare(categoryB, "es");
           if (catCompare !== 0) return catCompare;
-          const brandCompare = String(a.brand ?? "").localeCompare(String(b.brand ?? ""), "es");
+
+          const brandA = brandNameById.get(String(a.brand ?? "")) ?? String(a.brand ?? "");
+          const brandB = brandNameById.get(String(b.brand ?? "")) ?? String(b.brand ?? "");
+          const brandCompare = brandA.localeCompare(brandB, "es");
           if (brandCompare !== 0) return brandCompare;
+
           return String(a.name ?? "").localeCompare(String(b.name ?? ""), "es");
         });
       setTableData(productsParsed);
@@ -94,7 +102,13 @@ export const useInventory = () => {
 
   const handleSaveRowEdits: MaterialReactTableProps<ProductWithId>["onEditingRowSave"] =
     useCallback(
-      async ({ exitEditingMode, row, values }: any) => {
+      async ({
+        exitEditingMode,
+        row,
+        values,
+      }: Parameters<
+        NonNullable<MaterialReactTableProps<ProductWithId>["onEditingRowSave"]>
+      >[0]) => {
         if (Object.keys(validationErrors).length) {
           await MySwal.fire({
             icon: "warning",
@@ -115,15 +129,13 @@ export const useInventory = () => {
           return;
         }
 
-        const brandId = brands.find((brand) => brand.name === String(values.brand))?._id;
-        const categoryId = categories.find(
-          (category) => category.name === String(values.category),
-        )?._id;
+        const brandId = String(values.brand ?? "");
+        const categoryId = String(values.category ?? "");
 
         const payload = {
           name: String(values.name ?? ""),
-          brand: brandId ?? String(values.brand ?? ""),
-          category: categoryId ?? String(values.category ?? ""),
+          brand: brandId,
+          category: categoryId,
           content: String(values.content ?? "").trim(),
           sale_price: String(values.sale_price ?? 0),
           bar_code: String(values.bar_code ?? ""),
@@ -151,7 +163,7 @@ export const useInventory = () => {
           showConfirmButton: false,
         });
       },
-      [brands, categories, fetchListProductsCurrent, validationErrors],
+      [fetchListProductsCurrent, validationErrors],
     );
 
   const handleCancelRowEdits = useCallback(() => {

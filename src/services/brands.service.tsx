@@ -11,7 +11,6 @@ const normalizeBrand = (brand: { _id: unknown; name: string }) => ({
 });
 
 const normalizeName = (value: string) => value.trim().replaceAll(/\s+/g, " ").toUpperCase();
-const escapeRegex = (value: string) => value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
 export async function createBrand(name: string) {
   try {
@@ -58,6 +57,14 @@ export async function deleteBrandById(id: string) {
   try {
     await connectDB();
 
+    if (!Types.ObjectId.isValid(id)) {
+      return {
+        success: false,
+        error: "Invalid brand id",
+        message: "ID de marca inválido.",
+      };
+    }
+
     const brand = await Brand.findById(id).lean();
     if (!brand) {
       return {
@@ -67,13 +74,8 @@ export async function deleteBrandById(id: string) {
       };
     }
 
-    const normalizedBrandName = normalizeName(String(brand.name ?? ""));
     const associatedProducts = await Product.countDocuments({
-      $or: [
-        { brand: id },
-        { brand: normalizedBrandName },
-        { brand: { $regex: `^${escapeRegex(normalizedBrandName)}$`, $options: "i" } },
-      ],
+      brand: id,
     });
 
     if (associatedProducts > 0) {

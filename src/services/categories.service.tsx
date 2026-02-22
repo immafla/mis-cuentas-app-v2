@@ -2,6 +2,7 @@
 
 import connectDB from "@/lib/mongodb";
 import Category from "@/lib/models/Category";
+import Product from "@/lib/models/Product";
 import { Types } from "mongoose";
 
 export type CategoryRow = {
@@ -156,6 +157,16 @@ export async function deleteCategoryById(id: string) {
         success: false,
         error: "Invalid category id",
         message: "ID de categoría inválido.",
+      };
+    }
+
+    const associatedProducts = await Product.countDocuments({ category: id });
+
+    if (associatedProducts > 0) {
+      return {
+        success: false,
+        error: "Category has associated products",
+        message: `No se puede eliminar. Hay ${associatedProducts} producto(s) asociado(s) a esta categoría.`,
       };
     }
 

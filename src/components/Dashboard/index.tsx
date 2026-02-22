@@ -67,7 +67,12 @@ const Dashboard = () => {
                       Ventas del día
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                      {`$ ${kpis.totalSales}`}
+                      {Number(kpis.totalSales ?? 0).toLocaleString("es-CO", {
+                        style: "currency",
+                        currency: "COP",
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
                     </Typography>
                     <Typography color="text.secondary">
                       {`${kpis.salesCount} transacciones`}
@@ -99,9 +104,21 @@ const Dashboard = () => {
                       Ganancia neta
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                      {`$ ${kpis.totalProfit}`}
+                      {Number(kpis.totalProfit ?? 0).toLocaleString("es-CO", {
+                        style: "currency",
+                        currency: "COP",
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
                     </Typography>
-                    <Typography color="text.secondary">{`Costo total: $ ${kpis.totalCost}`}</Typography>
+                    <Typography color="text.secondary">
+                      {`Costo total: ${Number(kpis.totalCost ?? 0).toLocaleString("es-CO", {
+                        style: "currency",
+                        currency: "COP",
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}`}
+                    </Typography>
                   </Stack>
                 </Paper>
               </Grow>

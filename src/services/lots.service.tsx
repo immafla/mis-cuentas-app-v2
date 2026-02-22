@@ -3,6 +3,8 @@
 import connectDB from "@/lib/mongodb";
 import Lot from "@/lib/models/Lot";
 import Product from "@/lib/models/Product";
+import "@/lib/models/Brand"; // registrar schema para populate
+import "@/lib/models/Category"; // registrar schema para populate
 import Supplier from "@/lib/models/Supplier";
 import { Types } from "mongoose";
 
@@ -11,6 +13,8 @@ export type LotItemDetail = {
   quantity: number;
   remainingQuantity: number;
   purchasePrice: number;
+  brand_name: string;
+  category_name: string;
 };
 
 export type LotRow = {
@@ -47,6 +51,8 @@ type LotPopulateShape = {
     product?: {
       name?: string;
       bar_code?: string;
+      brand?: { name?: string } | null;
+      category?: { name?: string } | null;
     };
     quantity?: number;
     remainingQuantity?: number;
@@ -73,6 +79,8 @@ const mapLot = (lot: LotPopulateShape): LotRow => ({
         quantity: Number(item.quantity ?? 0),
         remainingQuantity: Number(item.remainingQuantity ?? 0),
         purchasePrice: Number(item.purchasePrice ?? 0),
+        brand_name: String(item.product?.brand?.name ?? ""),
+        category_name: String(item.product?.category?.name ?? ""),
       }))
     : [],
   productsCount: Array.isArray(lot.items) ? lot.items.length : 0,
@@ -96,12 +104,19 @@ export async function getAllLots(limit = 200) {
       .sort({ receivedAt: -1 })
       .limit(limit)
       .populate("supplier", "name nit")
-      .populate("items.product", "name bar_code")
+      .populate({
+        path: "items.product",
+        select: "name bar_code brand category",
+        populate: [
+          { path: "brand", select: "name" },
+          { path: "category", select: "name" },
+        ],
+      })
       .lean();
 
     return {
       success: true,
-      data: lots.map((lot) => mapLot(lot as LotPopulateShape)),
+      data: (lots as LotPopulateShape[]).map(mapLot),
     };
   } catch (error) {
     console.error("Error fetching lots:", error);
@@ -235,7 +250,14 @@ export async function createLot(input: CreateLotInput) {
 
     const populatedLot = await Lot.findById(createdLot._id)
       .populate("supplier", "name nit")
-      .populate("items.product", "name bar_code")
+      .populate({
+        path: "items.product",
+        select: "name bar_code brand category",
+        populate: [
+          { path: "brand", select: "name" },
+          { path: "category", select: "name" },
+        ],
+      })
       .lean();
 
     return {
@@ -446,7 +468,14 @@ export async function updateLotById(id: string, input: UpdateLotInput) {
 
     const populatedLot = await Lot.findById(id)
       .populate("supplier", "name nit")
-      .populate("items.product", "name bar_code")
+      .populate({
+        path: "items.product",
+        select: "name bar_code brand category",
+        populate: [
+          { path: "brand", select: "name" },
+          { path: "category", select: "name" },
+        ],
+      })
       .lean();
 
     return {

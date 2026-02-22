@@ -10,6 +10,20 @@ export const productColumns = (
   categories: any[],
   getCommonEditTextFieldProps: any,
 ): MRT_ColumnDef<any>[] => {
+  const brandNameById = new Map(brands.map((brand) => [String(brand._id), String(brand.name)]));
+  const categoryNameById = new Map(
+    categories.map((category) => [String(category._id), String(category.name)]),
+  );
+
+  const resolveName = (value: unknown, map: Map<string, string>) => {
+    if (value === null || value === undefined) {
+      return "";
+    }
+
+    const parsedValue = typeof value === "string" || typeof value === "number" ? String(value) : "";
+    return map.get(parsedValue) ?? parsedValue;
+  };
+
   return [
     {
       accessorKey: "category",
@@ -23,20 +37,14 @@ export const productColumns = (
         children: [...categories]
           .sort((a, b) => String(a.name).localeCompare(String(b.name), "es"))
           .map((category) => (
-            <MenuItem key={category._id} value={category.name}>
+            <MenuItem key={category._id} value={category._id}>
               {category.name}
             </MenuItem>
           )),
       },
       Cell: ({ cell }: { cell: any }) => {
         const categoryValue = cell.getValue();
-        // Si es un ID (24 caracteres hex), buscar el nombre
-        if (typeof categoryValue === "string" && categoryValue.length === 24) {
-          const category = categories.find((cat) => cat._id === categoryValue);
-          return <Box>{category?.name ?? categoryValue}</Box>;
-        }
-        // Si ya es un nombre, mostrarlo directamente
-        return <Box>{categoryValue}</Box>;
+        return <Box>{resolveName(categoryValue, categoryNameById)}</Box>;
       },
     },
     {
@@ -44,24 +52,25 @@ export const productColumns = (
       header: "Marca",
       size: 40,
       enableGrouping: true,
-      muiEditTextFieldProps: ({ cell }: { cell: any }) => {
-        console.log({ cell });
-        return {
-          variant: "outlined",
-          select: true, //change to select for a dropdown
-          children: [...brands]
-            .sort((a, b) => String(a.name).localeCompare(String(b.name), "es"))
-            .map((brand) => (
-              <MenuItem key={brand._id} value={brand.name}>
-                {brand.name}
-              </MenuItem>
-            )),
-        };
+      muiEditTextFieldProps: {
+        variant: "outlined",
+        select: true,
+        children: [...brands]
+          .sort((a, b) => String(a.name).localeCompare(String(b.name), "es"))
+          .map((brand) => (
+            <MenuItem key={brand._id} value={brand._id}>
+              {brand.name}
+            </MenuItem>
+          )),
+      },
+      Cell: ({ cell }: { cell: any }) => {
+        const brandValue = cell.getValue();
+        return <Box>{resolveName(brandValue, brandNameById)}</Box>;
       },
     },
     {
       accessorKey: "name",
-      header: "Atributo",
+      header: "Nombre",
       size: 140,
       muiEditTextFieldProps: ({ cell }: { cell: any }) => ({
         variant: "outlined",

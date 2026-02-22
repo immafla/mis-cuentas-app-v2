@@ -1,6 +1,7 @@
 "use server";
 
 import connectDB from "@/lib/mongodb";
+import Lot from "@/lib/models/Lot";
 import Product from "@/lib/models/Product";
 import { Types } from "mongoose";
 
@@ -252,7 +253,7 @@ type ProductListItem = {
 type AggregatedProduct = {
   _id: Types.ObjectId | string;
   name?: string;
-  brand?: string;
+  brand?: Types.ObjectId | string | null;
   category?: Types.ObjectId | string | null;
   brand_name?: string;
   category_name?: string;
@@ -279,17 +280,9 @@ export async function getAllProducts(params?: GetAllProductsParams) {
       {
         $lookup: {
           from: "brands",
-          let: { brandId: "$brand" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $eq: [{ $toString: "$_id" }, "$$brandId"],
-                },
-              },
-            },
-            { $project: { _id: 0, name: 1 } },
-          ],
+          localField: "brand",
+          foreignField: "_id",
+          pipeline: [{ $project: { _id: 0, name: 1 } }],
           as: "brandDoc",
         },
       },
@@ -346,7 +339,7 @@ export async function getAllProducts(params?: GetAllProductsParams) {
           ...product,
           _id: id,
           name: toSafeString(product.name),
-          brand: toSafeString(product.brand),
+          brand: toObjectIdString(product.brand),
           category,
           brand_name: toSafeString(product.brand_name),
           category_name: toSafeString(product.category_name),
@@ -380,6 +373,18 @@ export async function deleteProductById(id: string) {
         success: false,
         error: "Invalid product id",
         message: "El id del producto no es válido.",
+      };
+    }
+
+    const associatedLots = await Lot.countDocuments({
+      "items.product": id,
+    });
+
+    if (associatedLots > 0) {
+      return {
+        success: false,
+        error: "Product has associated lots",
+        message: `No se puede eliminar. El producto está asociado a ${associatedLots} lote(s), activos o inactivos.`,
       };
     }
 
