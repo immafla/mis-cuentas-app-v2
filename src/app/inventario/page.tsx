@@ -2,10 +2,11 @@
 
 import React from "react";
 import { Box, Container, Stack, Typography } from "@mui/material";
+import { MRT_Row } from "material-react-table";
 import CustomTable from "@/components/Table";
 
 import { NewProductModal } from "./components/new-product";
-import { useInventory } from "./hooks/useInventory";
+import { ProductWithId, useInventory } from "./hooks/useInventory";
 
 export default function InventarioPage() {
   const {
@@ -49,6 +50,25 @@ export default function InventarioPage() {
             handleCancelRowEdits={handleCancelRowEdits}
             handleDeleteRow={handleDeleteRow}
             setCreateModalOpen={setCreateModalOpen}
+            muiTableBodyRowProps={({ row }: { row: MRT_Row<ProductWithId> }) => ({
+              hover: true,
+              onClick: (event: React.MouseEvent<HTMLElement>) => {
+                const target = event.target as HTMLElement;
+                if (target.closest("button, a, input, textarea, [role='button']")) {
+                  return;
+                }
+
+                if (row?.getCanExpand?.()) {
+                  row.toggleExpanded();
+                }
+              },
+              sx: {
+                cursor: row?.getCanExpand?.() ? "pointer" : "default",
+                "&:hover": {
+                  backgroundColor: "action.hover",
+                },
+              },
+            })}
             enableGrouping={true}
             groupedColumnMode="reorder"
             initialGrouping={["category", "brand"]}

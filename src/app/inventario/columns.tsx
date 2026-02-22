@@ -46,6 +46,18 @@ export const productColumns = (
         const categoryValue = cell.getValue();
         return <Box>{resolveName(categoryValue, categoryNameById)}</Box>;
       },
+      GroupedCell: ({ cell, row }: { cell: any; row: any }) => {
+        const categoryValue = cell.getValue();
+        const count = Number(row?.subRows?.length ?? 0);
+        return (
+          <Box
+            sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, whiteSpace: "nowrap" }}
+          >
+            <Box component="span">{resolveName(categoryValue, categoryNameById)}</Box>
+            <Box component="span" sx={{ color: "text.secondary" }}>{`(${count})`}</Box>
+          </Box>
+        );
+      },
     },
     {
       accessorKey: "brand",
@@ -66,6 +78,18 @@ export const productColumns = (
       Cell: ({ cell }: { cell: any }) => {
         const brandValue = cell.getValue();
         return <Box>{resolveName(brandValue, brandNameById)}</Box>;
+      },
+      GroupedCell: ({ cell, row }: { cell: any; row: any }) => {
+        const brandValue = cell.getValue();
+        const count = Number(row?.subRows?.length ?? 0);
+        return (
+          <Box
+            sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, whiteSpace: "nowrap" }}
+          >
+            <Box component="span">{resolveName(brandValue, brandNameById)}</Box>
+            <Box component="span" sx={{ color: "text.secondary" }}>{`(${count})`}</Box>
+          </Box>
+        );
       },
     },
     {
