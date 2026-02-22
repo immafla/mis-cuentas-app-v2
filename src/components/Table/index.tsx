@@ -208,6 +208,24 @@ const Table = ({
         overflowY: "auto",
         flex: 1,
         minHeight: 0,
+        scrollbarWidth: "thin",
+        scrollbarColor: `${theme.palette.primary.main} ${theme.palette.grey[900]}`,
+        "&::-webkit-scrollbar": {
+          width: 10,
+          height: 10,
+        },
+        "&::-webkit-scrollbar-track": {
+          backgroundColor: theme.palette.grey[900],
+          borderRadius: 8,
+        },
+        "&::-webkit-scrollbar-thumb": {
+          backgroundColor: theme.palette.primary.main,
+          borderRadius: 8,
+          border: `2px solid ${theme.palette.grey[900]}`,
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          backgroundColor: theme.palette.primary.dark,
+        },
       },
     },
     muiTopToolbarProps: {

@@ -72,13 +72,27 @@ const NewSale = () => {
   }, []);
 
   return (
-    <Container fixed sx={{ py: 3 }}>
-      <Grid container spacing={3}>
+    <Container
+      fixed
+      sx={{
+        py: { xs: 1, sm: 2, md: 3 },
+        height: "100%",
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Grid container spacing={3} sx={{ flex: 1, minHeight: 0 }}>
         {/* NEGOCIO */}
-        <Grid size={12}>
+        <Grid size={12} sx={{ display: "flex", minHeight: 0 }}>
           <Paper
             elevation={0}
             sx={{
+              flex: 1,
+              minHeight: 0,
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
               borderRadius: 2,
               border: "1px solid",
               borderColor: "divider",
@@ -106,6 +120,12 @@ const NewSale = () => {
                 </Stack>
 
                 <Autocomplete<ProductSearchOption, false, false, false>
+                  sx={{
+                    "& .MuiAutocomplete-noOptions, & .MuiAutocomplete-loading": {
+                      justifyContent: "center",
+                      textAlign: "center",
+                    },
+                  }}
                   options={productSearchOptions}
                   loading={isSearchingProducts}
                   autoHighlight
@@ -169,13 +189,26 @@ const NewSale = () => {
               </Stack>
             </Box>
 
-            <Box sx={{ maxHeight: "60vh", overflow: "auto" }}>
-              <List sx={{ px: 2, py: 1 }}>
+            <Box sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+              <List
+                sx={{ px: 2, py: 1, minHeight: "100%", display: "flex", flexDirection: "column" }}
+              >
                 {totalItems === 0 && (
-                  <ListItem sx={{ py: 3 }}>
+                  <ListItem
+                    sx={{
+                      py: 3,
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textAlign: "center",
+                    }}
+                  >
                     <ListItemText
                       primary="No hay productos escaneados"
                       secondary="Escanea un código de barras para añadir productos."
+                      primaryTypographyProps={{ textAlign: "center" }}
+                      secondaryTypographyProps={{ textAlign: "center" }}
                     />
                   </ListItem>
                 )}

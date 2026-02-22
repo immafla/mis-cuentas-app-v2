@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Container, Stack, Typography } from "@mui/material";
+import { Box, Container, Paper, Stack, Typography } from "@mui/material";
 import { MRT_ColumnDef, MRT_Row } from "material-react-table";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -127,30 +127,53 @@ export default function HistorialVentasPage() {
       <Container
         maxWidth={false}
         disableGutters
-        sx={{ py: 0, px: 0, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}
+        sx={{
+          py: { xs: 1, sm: 2, md: 3 },
+          px: { xs: 1, sm: 2 },
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
-        <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700 }}>
-              Historial de ventas
-            </Typography>
-            <Typography color="text.secondary">Listado y gestión de ventas registradas.</Typography>
-          </Box>
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "divider",
+            overflow: "hidden",
+          }}
+        >
+          <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
+            <Box sx={{ px: 2.5, pt: 2, pb: 1.5 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                Historial de ventas
+              </Typography>
+              <Typography color="text.secondary">
+                Listado y gestión de ventas registradas.
+              </Typography>
+            </Box>
 
-          <CustomTable
-            columns={columns}
-            tableData={tableData}
-            isLoading={isLoading}
-            handleSaveRowEdits={async () => {}}
-            handleCancelRowEdits={() => {}}
-            handleDeleteRow={handleDeleteRow}
-            setCreateModalOpen={() => {}}
-            showCreateButton={false}
-            showEditAction={false}
-            actionsHeader="Eliminar venta"
-            searchPlaceholder="Buscar ventas"
-          />
-        </Stack>
+            <CustomTable
+              columns={columns}
+              tableData={tableData}
+              isLoading={isLoading}
+              handleSaveRowEdits={async () => {}}
+              handleCancelRowEdits={() => {}}
+              handleDeleteRow={handleDeleteRow}
+              setCreateModalOpen={() => {}}
+              showCreateButton={false}
+              showEditAction={false}
+              actionsHeader="Eliminar venta"
+              searchPlaceholder="Buscar ventas"
+            />
+          </Stack>
+        </Paper>
       </Container>
     </Box>
   );

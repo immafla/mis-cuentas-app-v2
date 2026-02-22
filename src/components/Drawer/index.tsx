@@ -347,9 +347,15 @@ export const MiniDrawer = ({
               setMoreMenuAnchor(null);
               void signOut({ callbackUrl: "/login" });
             }}
-            sx={{ color: "error.main" }}
+            sx={{
+              bgcolor: "primary.main",
+              color: "common.black",
+              "&:hover": {
+                bgcolor: "primary.dark",
+              },
+            }}
           >
-            <ListItemIcon sx={{ color: "error.main" }}>
+            <ListItemIcon sx={{ color: "common.black" }}>
               <LogoutIcon />
             </ListItemIcon>
             <ListItemText>Cerrar sesión</ListItemText>
@@ -473,11 +479,25 @@ export const MiniDrawer = ({
               sx={{ display: "block" }}
               onClick={() => signOut({ callbackUrl: "/login" })}
             >
-              <ListItemButton sx={listItemButtonSx}>
-                <ListItemIcon sx={listItemIconSx}>
+              <ListItemButton
+                sx={{
+                  ...listItemButtonSx,
+                  bgcolor: "primary.main",
+                  "&:hover": {
+                    bgcolor: "primary.dark",
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ ...listItemIconSx, color: "common.black" }}>
                   <LogoutIcon />
                 </ListItemIcon>
-                <ListItemText primary="Cerrar sesión" sx={{ opacity: open ? 1 : 0 }} />
+                <ListItemText
+                  primary="Cerrar sesión"
+                  sx={{
+                    opacity: open ? 1 : 0,
+                    color: "common.black",
+                  }}
+                />
               </ListItemButton>
             </ListItem>
           </List>

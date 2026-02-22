@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Container, Stack, Typography } from "@mui/material";
+import { Box, Container, Paper, Stack, Typography } from "@mui/material";
 import CustomTable from "@/components/Table";
 import { NewSupplierModal } from "./components/new-supplier";
 import { useSuppliers } from "./hooks/useSuppliers";
@@ -30,32 +30,53 @@ const ProveedoresPage = () => {
       <Container
         maxWidth={false}
         disableGutters
-        sx={{ py: 0, px: 0, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}
+        sx={{
+          py: { xs: 1, sm: 2, md: 3 },
+          px: { xs: 1, sm: 2 },
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
-        <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700 }}>
-              Proveedores
-            </Typography>
-            <Typography color="text.secondary">Gestiona proveedores y su NIT.</Typography>
-          </Box>
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "divider",
+            overflow: "hidden",
+          }}
+        >
+          <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
+            <Box sx={{ px: 2.5, pt: 2, pb: 1.5 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                Proveedores
+              </Typography>
+              <Typography color="text.secondary">Gestiona proveedores y su NIT.</Typography>
+            </Box>
 
-          <CustomTable
-            columns={columns}
-            tableData={tableData}
-            isLoading={isLoading}
-            handleSaveRowEdits={handleSaveRowEdits}
-            handleCancelRowEdits={handleCancelRowEdits}
-            handleDeleteRow={handleDeleteRow}
-            setCreateModalOpen={setCreateModalOpen}
-          />
+            <CustomTable
+              columns={columns}
+              tableData={tableData}
+              isLoading={isLoading}
+              handleSaveRowEdits={handleSaveRowEdits}
+              handleCancelRowEdits={handleCancelRowEdits}
+              handleDeleteRow={handleDeleteRow}
+              setCreateModalOpen={setCreateModalOpen}
+            />
 
-          <NewSupplierModal
-            open={createModalOpen}
-            onClose={() => setCreateModalOpen(false)}
-            onSubmit={handleCreateSupplier}
-          />
-        </Stack>
+            <NewSupplierModal
+              open={createModalOpen}
+              onClose={() => setCreateModalOpen(false)}
+              onSubmit={handleCreateSupplier}
+            />
+          </Stack>
+        </Paper>
       </Container>
     </Box>
   );
