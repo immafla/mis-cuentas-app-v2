@@ -109,12 +109,30 @@ const Table = ({
         </Button>
 
         {enableGrouping && (
-          <>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              p: 0.5,
+              borderRadius: 1,
+              bgcolor: "grey.900",
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
             <Button
               variant="outlined"
               size="small"
               onClick={() => setExpanded(true)}
               disabled={expanded === true}
+              sx={{
+                color: "primary.main",
+                borderColor: "primary.main",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  bgcolor: "rgba(0,0,0,0.2)",
+                },
+              }}
             >
               Expandir todo
             </Button>
@@ -123,10 +141,18 @@ const Table = ({
               size="small"
               onClick={() => setExpanded({})}
               disabled={isCollapsed}
+              sx={{
+                color: "primary.main",
+                borderColor: "primary.main",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  bgcolor: "rgba(0,0,0,0.2)",
+                },
+              }}
             >
               Colapsar todo
             </Button>
-          </>
+          </Box>
         )}
       </Box>
     );
@@ -260,6 +286,38 @@ const Table = ({
     muiBottomToolbarProps: {
       sx: {
         flexShrink: 0,
+      },
+    },
+    muiToolbarAlertBannerProps: {
+      sx: {
+        bgcolor: "background.paper",
+        color: "primary.main",
+        borderTop: "1px solid",
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        "& .MuiAlert-icon": {
+          color: "primary.main",
+        },
+        "& .MuiAlert-message": {
+          color: "primary.main",
+          fontWeight: 600,
+        },
+      },
+    },
+    muiToolbarAlertBannerChipProps: {
+      size: "small",
+      sx: {
+        bgcolor: "action.selected",
+        color: "primary.main",
+        border: "1px solid",
+        borderColor: "primary.main",
+        fontWeight: 600,
+        "& .MuiChip-deleteIcon": {
+          color: "primary.main",
+        },
+        "& .MuiChip-deleteIcon:hover": {
+          color: "primary.light",
+        },
       },
     },
     muiCircularProgressProps: {
