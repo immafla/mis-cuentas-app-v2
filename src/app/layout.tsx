@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import ThemeRegistry from "../components/ThemeRegistry";
 import AppShell from "../components/AppShell";
 import AuthSessionProvider from "@/components/AuthSessionProvider";
 import { GlobalProvider } from "@/context/global";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
 });
 
@@ -37,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${montserrat.variable} ${montserrat.className} antialiased`}
         style={{ margin: 0 }}
       >
         <AuthSessionProvider>

@@ -437,10 +437,10 @@ export const MiniDrawer = ({
                 {mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}
               </IconButton>
               <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                <Typography variant="caption" noWrap>
+                <Typography variant="caption" color="primary.main" noWrap>
                   Y a beber
                 </Typography>
-                <Typography variant="subtitle2" noWrap>
+                <Typography variant="subtitle2" color="primary.main" noWrap>
                   {userDisplayName}
                 </Typography>
               </Box>

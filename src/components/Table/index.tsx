@@ -103,7 +103,7 @@ const Table = ({
               gap: "0.5rem",
             }}
           >
-            <AddCircle color="secondary" />
+            <AddCircle sx={{ color: "common.black" }} />
             Nuevo
           </Box>
         </Button>

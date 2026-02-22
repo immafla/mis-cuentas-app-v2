@@ -25,6 +25,7 @@ import {
 import useDashboard from "./hooks/useDashboard";
 import { DashboardSale } from "./interfaces";
 import SalesTrendChart from "./SalesTrendChart";
+import bgImage from "@/assets/images/bg.jpg";
 
 const Dashboard = () => {
   const { isLoading, recentSales, kpis, glassCardSx } = useDashboard();
@@ -42,11 +43,30 @@ const Dashboard = () => {
     <Box
       sx={{
         height: "100%",
+        position: "relative",
+        isolation: "isolate",
         display: "flex",
         flexDirection: "column",
         overflow: "auto",
       }}
     >
+      <Box
+        aria-hidden
+        sx={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundImage: `url(${bgImage.src})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+          opacity: 0.15,
+          zIndex: -1,
+          pointerEvents: "none",
+        }}
+      />
       <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3 } }}>
         <Stack spacing={{ xs: 2, sm: 3 }}>
           <Fade in timeout={350}>
