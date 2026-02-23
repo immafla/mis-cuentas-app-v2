@@ -219,23 +219,6 @@ export async function createLot(input: CreateLotInput) {
       0,
     );
 
-    const stockUpdatesByProduct = normalizedItems.reduce((acc, item) => {
-      const current = acc.get(item.productId) ?? { quantity: 0 };
-      acc.set(item.productId, {
-        quantity: current.quantity + item.quantity,
-      });
-      return acc;
-    }, new Map<string, { quantity: number }>());
-
-    const productBulkOps = Array.from(stockUpdatesByProduct.entries()).map(([productId, data]) => ({
-      updateOne: {
-        filter: { _id: productId },
-        update: {
-          $inc: { amount: data.quantity },
-        },
-      },
-    }));
-
     const createdLot = new Lot({
       receivedAt,
       supplier: new Types.ObjectId(input.supplierId),
@@ -245,8 +228,6 @@ export async function createLot(input: CreateLotInput) {
     });
 
     await createdLot.save();
-
-    await Product.bulkWrite(productBulkOps, { ordered: true });
 
     const populatedLot = await Lot.findById(createdLot._id)
       .populate("supplier", "name nit")
@@ -350,7 +331,11 @@ export async function updateLotById(id: string, input: UpdateLotInput) {
 
     const supplier = await Supplier.findById(input.supplierId).lean();
     if (!supplier) {
-      return { success: false, error: "Supplier not found", message: "No se encontró el proveedor." };
+      return {
+        success: false,
+        error: "Supplier not found",
+        message: "No se encontró el proveedor.",
+      };
     }
 
     const productIds = normalizedItems.map((item) => item.productId);
@@ -376,9 +361,6 @@ export async function updateLotById(id: string, input: UpdateLotInput) {
       ]),
     );
 
-    // Calculate stock deltas and new remainingQuantity per item
-    const stockDeltas = new Map<string, number>();
-
     const newLotItems = normalizedItems.map((item) => {
       const old = oldItemsByProduct.get(item.productId);
       let remainingQuantity: number;
@@ -387,18 +369,10 @@ export async function updateLotById(id: string, input: UpdateLotInput) {
         // Existing product: adjust remaining by the quantity delta
         const quantityDelta = item.quantity - old.quantity;
         remainingQuantity = Math.max(old.remainingQuantity + quantityDelta, 0);
-        stockDeltas.set(
-          item.productId,
-          (stockDeltas.get(item.productId) ?? 0) + quantityDelta,
-        );
         oldItemsByProduct.delete(item.productId);
       } else {
         // New product added to the lot
         remainingQuantity = item.quantity;
-        stockDeltas.set(
-          item.productId,
-          (stockDeltas.get(item.productId) ?? 0) + item.quantity,
-        );
       }
 
       return {
@@ -410,53 +384,11 @@ export async function updateLotById(id: string, input: UpdateLotInput) {
       };
     });
 
-    // Products removed from the lot: reverse their remainingQuantity
-    for (const [productId, old] of oldItemsByProduct.entries()) {
-      if (old.remainingQuantity > 0) {
-        stockDeltas.set(
-          productId,
-          (stockDeltas.get(productId) ?? 0) - old.remainingQuantity,
-        );
-      }
-    }
-
     const totalQuantity = normalizedItems.reduce((sum, item) => sum + item.quantity, 0);
     const totalCost = normalizedItems.reduce(
       (sum, item) => sum + item.quantity * item.purchasePrice,
       0,
     );
-
-    // Apply stock deltas
-    const allProductIds = Array.from(stockDeltas.keys()).filter(
-      (pid) => stockDeltas.get(pid) !== 0,
-    );
-
-    if (allProductIds.length > 0) {
-      const currentProducts = await Product.find({ _id: { $in: allProductIds } })
-        .select("_id amount")
-        .lean();
-
-      const amountMap = new Map(
-        currentProducts.map((p) => [String(p._id), Number(p.amount ?? 0)]),
-      );
-
-      const bulkOps = allProductIds
-        .filter((pid) => amountMap.has(pid))
-        .map((pid) => {
-          const delta = stockDeltas.get(pid) ?? 0;
-          const currentAmount = amountMap.get(pid) ?? 0;
-          return {
-            updateOne: {
-              filter: { _id: pid },
-              update: { $set: { amount: Math.max(currentAmount + delta, 0) } },
-            },
-          };
-        });
-
-      if (bulkOps.length > 0) {
-        await Product.bulkWrite(bulkOps, { ordered: true });
-      }
-    }
 
     await Lot.findByIdAndUpdate(id, {
       receivedAt,
@@ -513,53 +445,6 @@ export async function deleteLotById(id: string) {
         error: "Lot not found",
         message: "No se encontró el lote.",
       };
-    }
-
-    const quantityByProduct = new Map<string, number>();
-
-    (Array.isArray(lot.items) ? lot.items : []).forEach((item) => {
-      const productId = String(item.product ?? "").trim();
-      const quantity = Math.max(
-        0,
-        Math.floor(Number(item.remainingQuantity ?? item.quantity ?? 0)),
-      );
-
-      if (!productId || quantity <= 0) {
-        return;
-      }
-
-      quantityByProduct.set(productId, (quantityByProduct.get(productId) ?? 0) + quantity);
-    });
-
-    const productIds = Array.from(quantityByProduct.keys());
-
-    if (productIds.length > 0) {
-      const products = await Product.find({ _id: { $in: productIds } })
-        .select("_id amount")
-        .lean();
-
-      const amountByProductId = new Map(
-        products.map((product) => [String(product._id), Number(product.amount ?? 0)]),
-      );
-
-      const operations = productIds
-        .filter((productId) => amountByProductId.has(productId))
-        .map((productId) => {
-          const currentAmount = amountByProductId.get(productId) ?? 0;
-          const quantityToRollback = quantityByProduct.get(productId) ?? 0;
-          const nextAmount = Math.max(currentAmount - quantityToRollback, 0);
-
-          return {
-            updateOne: {
-              filter: { _id: productId },
-              update: { $set: { amount: nextAmount } },
-            },
-          };
-        });
-
-      if (operations.length > 0) {
-        await Product.bulkWrite(operations, { ordered: true });
-      }
     }
 
     await Lot.findByIdAndDelete(id).lean();

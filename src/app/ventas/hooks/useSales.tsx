@@ -125,7 +125,7 @@ export const useSales = () => {
             {
               id: productId,
               barCode: productBarCode,
-              name: data.name,
+              name: String(data.name ?? ""),
               price: Number(data.sale_price),
               purchasePrice: 0,
               amount: data.amount ?? 0,

@@ -8,7 +8,6 @@ import { Types } from "mongoose";
 type ProductCreateInput = {
   name: string;
   brand: string;
-  amount: number;
   category: string | Types.ObjectId;
   sale_price: string;
   bar_code: string;
@@ -110,7 +109,6 @@ export async function createProduct(input: ProductCreateInput) {
       category: normalizedCategory,
       bar_code: normalizedBarCode,
       sale_price: String(normalizedSalePrice),
-      amount: Number(input?.amount ?? 0),
       content: normalizedContentRaw ? Number(normalizedContent) : undefined,
     });
 
@@ -165,10 +163,6 @@ export async function updateProductById(id: string, update: ProductUpdate) {
       }
 
       fieldsToSet.sale_price = String(normalizedSalePrice);
-    }
-
-    if (updateData.amount !== undefined) {
-      fieldsToSet.amount = Number(updateData.amount ?? 0);
     }
 
     if (Object.prototype.hasOwnProperty.call(updateData, "content")) {
@@ -263,6 +257,45 @@ type AggregatedProduct = {
   amount?: number;
 };
 
+const buildProductAvailableAmountLookupStages = () => [
+  {
+    $lookup: {
+      from: "lots",
+      let: { productId: "$_id" },
+      pipeline: [
+        { $unwind: "$items" },
+        {
+          $match: {
+            $expr: { $eq: ["$items.product", "$$productId"] },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            amount: {
+              $sum: {
+                $cond: [
+                  { $gt: [{ $ifNull: ["$items.remainingQuantity", 0] }, 0] },
+                  { $ifNull: ["$items.remainingQuantity", 0] },
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      ],
+      as: "stockDoc",
+    },
+  },
+  {
+    $addFields: {
+      amount: {
+        $ifNull: [{ $arrayElemAt: ["$stockDoc.amount", 0] }, 0],
+      },
+    },
+  },
+];
+
 type GetAllProductsParams = {
   q?: string;
   limit?: number;
@@ -273,10 +306,11 @@ export async function getAllProducts(params?: GetAllProductsParams) {
     await connectDB();
 
     const query = String(params?.q ?? "").trim();
-    const limitParam = Number(params?.limit ?? 100);
-    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 50) : 10;
+    const limitParam = Number(params?.limit ?? 200);
+    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 100) : 10;
 
     const products = await Product.aggregate<AggregatedProduct>([
+      ...buildProductAvailableAmountLookupStages(),
       {
         $lookup: {
           from: "brands",
@@ -325,6 +359,7 @@ export async function getAllProducts(params?: GetAllProductsParams) {
         $project: {
           brandDoc: 0,
           categoryDoc: 0,
+          stockDoc: 0,
         },
       },
     ]);
@@ -415,91 +450,20 @@ export async function deleteProductById(id: string) {
   }
 }
 
-type ProductAmountUpdate = {
-  id: string;
-  quantity: number;
-};
-
-export async function updateProductsAmountBatch(updates: ProductAmountUpdate[]) {
-  try {
-    await connectDB();
-
-    if (!updates || updates.length === 0) {
-      return {
-        success: true,
-        message: "No updates to apply",
-        data: [],
-      };
-    }
-
-    const normalizedUpdates = updates
-      .map((update) => ({
-        id: String(update.id ?? "").trim(),
-        quantity: Math.max(0, Math.floor(Number(update.quantity ?? 0))),
-      }))
-      .filter(
-        (update) =>
-          update.id.length > 0 &&
-          update.id !== "[object Object]" &&
-          Types.ObjectId.isValid(update.id) &&
-          update.quantity > 0,
-      );
-
-    if (!normalizedUpdates.length) {
-      return {
-        success: true,
-        message: "No valid updates to apply",
-        data: [],
-      };
-    }
-
-    const products = await Product.find({
-      _id: { $in: normalizedUpdates.map((update) => update.id) },
-    })
-      .select("_id amount")
-      .lean();
-
-    const currentAmountById = new Map(
-      products.map((product) => [String(product._id), Number(product.amount ?? 0)]),
-    );
-
-    const operations = normalizedUpdates.map(({ id, quantity }) => {
-      const currentAmount = currentAmountById.get(id) ?? 0;
-      const nextAmount = Math.max(currentAmount - quantity, 0);
-
-      return {
-        updateOne: {
-          filter: { _id: id },
-          update: { $set: { amount: nextAmount } },
-        },
-      };
-    });
-
-    const result = await Product.bulkWrite(operations, { ordered: false });
-
-    return {
-      success: true,
-      message: "Products amount updated successfully",
-      data: {
-        matchedCount: result.matchedCount,
-        modifiedCount: result.modifiedCount,
-      },
-    };
-  } catch (error) {
-    console.error("Error updating products amount:", error);
-    return {
-      success: false,
-      error: "Failed to update products amount",
-      message: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
-
 export async function getProductByBarcode(barCode: string) {
   try {
     await connectDB();
 
-    const product = await Product.findOne({ bar_code: barCode }).lean();
+    const [product] = await Product.aggregate<AggregatedProduct>([
+      { $match: { bar_code: barCode } },
+      ...buildProductAvailableAmountLookupStages(),
+      {
+        $project: {
+          stockDoc: 0,
+        },
+      },
+      { $limit: 1 },
+    ]);
 
     if (!product) {
       return {
@@ -512,6 +476,11 @@ export async function getProductByBarcode(barCode: string) {
     const normalizedProduct = {
       ...product,
       _id: String(product._id),
+      brand: toObjectIdString(product.brand),
+      category: toObjectIdString(product.category),
+      sale_price: toSafeString(product.sale_price, "0"),
+      bar_code: toSafeString(product.bar_code),
+      amount: Number(product.amount ?? 0),
     };
 
     return {

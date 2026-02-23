@@ -101,7 +101,6 @@ export const useNewProductModal = ({ columns, onSubmit }: UseNewProductModalPara
 
     await onSubmit({
       ...values,
-      amount: 0,
       brand: brandSelected,
       category: categorySelected,
     } as Product);

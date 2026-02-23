@@ -16,6 +16,8 @@ export type ProductOption = {
   name: string;
   bar_code: string;
   amount: number;
+  brand_name?: string;
+  category_name?: string;
 };
 
 export type NewLotValues = {

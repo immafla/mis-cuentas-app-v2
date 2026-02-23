@@ -22,6 +22,14 @@ import { NewLotValues, ProductOption } from "../../hooks/useLots";
 
 const MySwal = withReactContent(Swal);
 
+const getProductOptionLabel = (option: ProductOption) => {
+  const category = String(option.category_name ?? "").trim();
+  const brand = String(option.brand_name ?? "").trim();
+  const name = String(option.name ?? "").trim();
+
+  return [category, brand, name].filter(Boolean).join(" ");
+};
+
 export const NewLotModal: FC<{
   open: boolean;
   onClose: () => void;
@@ -299,7 +307,7 @@ export const NewLotModal: FC<{
               value={row.selectedProduct}
               onChange={(_, value) => handleChangeRow(index, "selectedProduct", value)}
               isOptionEqualToValue={(option, value) => option._id === value._id}
-              getOptionLabel={(option) => `${option.name} · ${option.bar_code}`}
+              getOptionLabel={getProductOptionLabel}
               renderOption={(props, option) => {
                 return (
                   <Box
@@ -307,7 +315,7 @@ export const NewLotModal: FC<{
                     {...props}
                     key={`${option._id}-${option.bar_code}-lot-option`}
                   >
-                    {`${option.name} · ${option.bar_code}`}
+                    {getProductOptionLabel(option)}
                   </Box>
                 );
               }}

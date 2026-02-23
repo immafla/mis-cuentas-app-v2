@@ -24,7 +24,7 @@ export type Product = {
   category: string;
   content?: string | number;
   sale_price: string | number;
-  amount: number;
+  amount?: number;
 };
 
 type Brand = {

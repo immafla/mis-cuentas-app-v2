@@ -425,7 +425,7 @@ export async function createSaleRecord(items: SaleInputItem[]) {
 
     const productIds = groupedItems.map((item) => item.productId);
 
-    const productDocs = await Product.find({ _id: { $in: productIds } }).select("_id amount");
+    const productDocs = await Product.find({ _id: { $in: productIds } }).select("_id");
     const productDocById = new Map(productDocs.map((doc) => [String(doc._id), doc]));
 
     const missingProduct = productIds.find((productId) => !productDocById.has(productId));
@@ -437,10 +437,36 @@ export async function createSaleRecord(items: SaleInputItem[]) {
       };
     }
 
+    const lotDocs = await Lot.find({
+      "items.product": { $in: productIds },
+    }).sort({ receivedAt: 1, _id: 1 });
+
+    const availableByProductId = new Map<string, number>();
+
+    for (const lotDoc of lotDocs) {
+      for (const lotItem of lotDoc.items) {
+        const productId = String(lotItem.product ?? "");
+
+        if (!productDocById.has(productId)) {
+          continue;
+        }
+
+        const available = Math.max(
+          0,
+          Math.floor(Number(lotItem.remainingQuantity ?? lotItem.quantity ?? 0)),
+        );
+
+        if (available <= 0) {
+          continue;
+        }
+
+        availableByProductId.set(productId, (availableByProductId.get(productId) ?? 0) + available);
+      }
+    }
+
     const hasInsufficientStock = groupedItems.some((item) => {
-      const productDoc = productDocById.get(item.productId);
-      const currentAmount = Number(productDoc?.amount ?? 0);
-      return currentAmount < item.quantity;
+      const available = availableByProductId.get(item.productId) ?? 0;
+      return available < item.quantity;
     });
 
     if (hasInsufficientStock) {
@@ -451,10 +477,6 @@ export async function createSaleRecord(items: SaleInputItem[]) {
       };
     }
 
-    const lotDocs = await Lot.find({
-      "items.product": { $in: productIds },
-    }).sort({ receivedAt: 1, _id: 1 });
-
     const normalizedItems = groupedItems.map((item) => consumeProductFromLots(item, lotDocs));
 
     const total = normalizedItems.reduce((sum, item) => sum + item.lineTotal, 0);
@@ -462,19 +484,7 @@ export async function createSaleRecord(items: SaleInputItem[]) {
     const totalProfit = normalizedItems.reduce((sum, item) => sum + item.lineProfit, 0);
     const totalItems = normalizedItems.reduce((sum, item) => sum + item.quantity, 0);
 
-    groupedItems.forEach((item) => {
-      const productDoc = productDocById.get(item.productId);
-
-      if (!productDoc) {
-        return;
-      }
-
-      const currentAmount = Number(productDoc.amount ?? 0);
-      productDoc.amount = Math.max(currentAmount - item.quantity, 0);
-    });
-
     await Promise.all(lotDocs.map((lotDoc) => lotDoc.save()));
-    await Promise.all(productDocs.map((productDoc) => productDoc.save()));
 
     const sale = await Sale.create({
       items: normalizedItems,
