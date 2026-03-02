@@ -31,22 +31,18 @@ export const useColorMode = () => {
 };
 
 export default function ThemeRegistry({ children }: Readonly<{ children: ReactNode }>) {
-  const [mode, setMode] = useState<PaletteMode>(() => {
-    if (globalThis.window === undefined) {
-      return "dark";
-    }
-
-    const storedMode = globalThis.localStorage?.getItem("theme-mode");
-
-    if (storedMode === "dark" || storedMode === "light") {
-      return storedMode;
-    }
-
-    return "dark";
-  });
+  const [mode, setMode] = useState<PaletteMode>("dark");
 
   const toggleColorMode = useCallback(() => {
     setMode((prevMode) => (prevMode === "light" ? "dark" : "light"));
+  }, []);
+
+  useEffect(() => {
+    const storedMode = globalThis.localStorage?.getItem("theme-mode");
+
+    if (storedMode === "dark" || storedMode === "light") {
+      setMode(storedMode);
+    }
   }, []);
 
   useEffect(() => {

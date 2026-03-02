@@ -28,6 +28,7 @@ export type DashboardKpis = {
   totalItems: number;
   avgTicket: number;
   salesCount: number;
+  dailySalesGoal: number;
   goalProgress: number;
   totalBusinessNetCost: number;
   totalBusinessSaleValue: number;

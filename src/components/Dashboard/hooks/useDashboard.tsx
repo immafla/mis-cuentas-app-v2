@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getDashboardSalesData } from "@/services/sales.service";
+import {
+  getCurrentUserSettings,
+  updateCurrentUserDailySalesGoal,
+} from "@/services/userSettings.service";
 import { DashboardKpis, DashboardSale } from "../interfaces";
+
+const DEFAULT_DAILY_SALES_GOAL = 100000;
 
 const useDashboard = () => {
   const LIMIT_SHOW_SALES = 8;
   const [isLoading, setIsLoading] = useState(true);
+  const [isSavingDailyGoal, setIsSavingDailyGoal] = useState(false);
   const [recentSales, setRecentSales] = useState<DashboardSale[]>([]);
   const [kpis, setKpis] = useState<DashboardKpis>({
     totalSales: 0,
@@ -15,17 +22,46 @@ const useDashboard = () => {
     totalItems: 0,
     avgTicket: 0,
     salesCount: 0,
+    dailySalesGoal: DEFAULT_DAILY_SALES_GOAL,
     goalProgress: 0,
     totalBusinessNetCost: 0,
     totalBusinessSaleValue: 0,
   });
+
+  const loadDashboard = async (dailySalesGoalTarget?: number) => {
+    const normalizedTarget = Math.max(
+      0,
+      Math.floor(Number(dailySalesGoalTarget ?? kpis.dailySalesGoal ?? DEFAULT_DAILY_SALES_GOAL)),
+    );
+
+    const { success, data } = await getDashboardSalesData(LIMIT_SHOW_SALES, normalizedTarget);
+
+    if (success && data) {
+      setRecentSales(data.recentSales);
+      setKpis({
+        ...data.kpis,
+        dailySalesGoal: normalizedTarget,
+      });
+    }
+  };
 
   useEffect(() => {
     let active = true;
 
     (async () => {
       try {
-        const { success, data } = await getDashboardSalesData(LIMIT_SHOW_SALES);
+        const { success: settingsSuccess, data: settingsData } = await getCurrentUserSettings();
+        const dailySalesGoalTarget = settingsSuccess
+          ? Math.max(
+              0,
+              Math.floor(Number(settingsData?.dailySalesGoal ?? DEFAULT_DAILY_SALES_GOAL)),
+            )
+          : DEFAULT_DAILY_SALES_GOAL;
+
+        const { success, data } = await getDashboardSalesData(
+          LIMIT_SHOW_SALES,
+          dailySalesGoalTarget,
+        );
 
         if (!active) {
           return;
@@ -33,7 +69,10 @@ const useDashboard = () => {
 
         if (success && data) {
           setRecentSales(data.recentSales);
-          setKpis(data.kpis);
+          setKpis({
+            ...data.kpis,
+            dailySalesGoal: dailySalesGoalTarget,
+          });
         }
       } catch (error) {
         console.error("Error loading dashboard sales", error);
@@ -48,6 +87,37 @@ const useDashboard = () => {
       active = false;
     };
   }, []);
+
+  const saveDailySalesGoal = async (nextDailySalesGoal: number) => {
+    const normalizedGoal = Math.max(0, Math.floor(Number(nextDailySalesGoal) || 0));
+
+    try {
+      setIsSavingDailyGoal(true);
+      const result = await updateCurrentUserDailySalesGoal(normalizedGoal);
+
+      if (!result.success) {
+        return {
+          success: false,
+          message: result.message || "No se pudo guardar la meta diaria.",
+        };
+      }
+
+      await loadDashboard(result.data?.dailySalesGoal ?? normalizedGoal);
+
+      return {
+        success: true,
+        message: result.message || "Meta diaria actualizada.",
+      };
+    } catch (error) {
+      console.error("Error saving daily sales goal", error);
+      return {
+        success: false,
+        message: "No se pudo guardar la meta diaria.",
+      };
+    } finally {
+      setIsSavingDailyGoal(false);
+    }
+  };
 
   const glassCardSx = useMemo(
     () => ({
@@ -122,8 +192,10 @@ const useDashboard = () => {
 
   return {
     isLoading,
+    isSavingDailyGoal,
     recentSales,
     kpis,
+    saveDailySalesGoal,
     glassCardSx,
   };
 };

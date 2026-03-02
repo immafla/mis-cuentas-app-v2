@@ -517,7 +517,7 @@ export async function createSaleRecord(items: SaleInputItem[]) {
   }
 }
 
-export async function getDashboardSalesData(limit = 8) {
+export async function getDashboardSalesData(limit = 8, dailySalesGoalTarget = 100000) {
   try {
     await connectDB();
 
@@ -663,6 +663,12 @@ export async function getDashboardSalesData(limit = 8) {
       inventoryValuationSummary[0]?.totalBusinessSaleValue ?? 0,
     );
 
+    const safeDailyGoalTarget = Math.max(0, Math.floor(Number(dailySalesGoalTarget) || 0));
+    const goalProgress =
+      safeDailyGoalTarget > 0
+        ? Math.min(Math.round((totalSales / safeDailyGoalTarget) * 100), 100)
+        : 0;
+
     return {
       success: true,
       data: {
@@ -675,7 +681,7 @@ export async function getDashboardSalesData(limit = 8) {
           totalItems,
           avgTicket,
           salesCount: todaySales.length,
-          goalProgress: Math.min(Math.round((totalSales / 100000) * 100), 100),
+          goalProgress,
           totalBusinessNetCost,
           totalBusinessSaleValue,
         },
