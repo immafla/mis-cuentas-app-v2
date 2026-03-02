@@ -27,6 +27,9 @@ import {
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import useDashboard from "./hooks/useDashboard";
 import { DashboardSale } from "./interfaces";
+import { BusinessFinancialSummaryCard } from "./BusinessFinancialSummaryCard";
+import { ProfitabilitySummaryCard } from "./ProfitabilitySummaryCard";
+import { SalesDaySummaryCard } from "./SalesDaySummaryCard";
 import SalesTrendChart from "./SalesTrendChart";
 import bgImage from "@/assets/images/bg.jpg";
 
@@ -43,8 +46,6 @@ const Dashboard = () => {
   const potentialInventoryProfit =
     Number(kpis.totalBusinessSaleValue ?? 0) - Number(kpis.totalBusinessNetCost ?? 0);
   const isPotentialPositive = potentialInventoryProfit >= 0;
-  const isProfitPositive = Number(kpis.totalProfit ?? 0) >= 0;
-  const isNetMarginPositive = Number(kpis.netMarginPercent ?? 0) >= 0;
 
   const handleOpenSaleDetail = (sale: DashboardSale) => {
     setSelectedSale(sale);
@@ -100,197 +101,30 @@ const Dashboard = () => {
             </Box>
           </Fade>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={3} alignItems="flex-start">
             <Grid size={{ xs: 12, lg: 6 }}>
               <Grow in timeout={420}>
-                <Paper elevation={0} sx={glassCardSx}>
-                  <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                      <Typography
-                        variant="h6"
-                        sx={{ fontWeight: 700, cursor: "pointer" }}
-                        onClick={() => toggleCard("salesSummary")}
-                      >
-                        Resumen de ventas del día
-                      </Typography>
-                      <IconButton
-                        size="small"
-                        onClick={() => toggleCard("salesSummary")}
-                        sx={{
-                          transform: expandedCards.salesSummary ? "rotate(0deg)" : "rotate(-90deg)",
-                          transition: "transform .2s ease",
-                        }}
-                      >
-                        <ExpandMoreRoundedIcon />
-                      </IconButton>
-                    </Stack>
-                    <Collapse in={expandedCards.salesSummary}>
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: 2,
-                        }}
-                      >
-                        <Box>
-                          <Typography
-                            color="text.secondary"
-                            variant="subtitle2"
-                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                          >
-                            Ventas del día
-                          </Typography>
-                          <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 700,
-                              color: "info.main",
-                              fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                            }}
-                          >
-                            {Number(kpis.totalSales ?? 0).toLocaleString("es-CO", {
-                              style: "currency",
-                              currency: "COP",
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            })}
-                          </Typography>
-                          <Typography
-                            color="text.secondary"
-                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                          >{`${kpis.salesCount} transacciones`}</Typography>
-                        </Box>
-
-                        <Box>
-                          <Typography
-                            color="text.secondary"
-                            variant="subtitle2"
-                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                          >
-                            Productos vendidos
-                          </Typography>
-                          <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 700,
-                              color: "primary.main",
-                              fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                            }}
-                          >
-                            {kpis.totalItems}
-                          </Typography>
-                          <Typography
-                            color="text.secondary"
-                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                          >
-                            Total de unidades
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Collapse>
-                  </Stack>
-                </Paper>
+                <SalesDaySummaryCard
+                  glassCardSx={glassCardSx}
+                  isExpanded={expandedCards.salesSummary}
+                  onToggle={() => toggleCard("salesSummary")}
+                  totalSales={kpis.totalSales}
+                  salesCount={kpis.salesCount}
+                  totalItems={kpis.totalItems}
+                />
               </Grow>
             </Grid>
 
             <Grid size={{ xs: 12, lg: 6 }}>
               <Grow in timeout={620}>
-                <Paper elevation={0} sx={glassCardSx}>
-                  <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                      <Typography
-                        variant="h6"
-                        sx={{ fontWeight: 700, cursor: "pointer" }}
-                        onClick={() => toggleCard("profitabilitySummary")}
-                      >
-                        Resumen de rentabilidad
-                      </Typography>
-                      <IconButton
-                        size="small"
-                        onClick={() => toggleCard("profitabilitySummary")}
-                        sx={{
-                          transform: expandedCards.profitabilitySummary
-                            ? "rotate(0deg)"
-                            : "rotate(-90deg)",
-                          transition: "transform .2s ease",
-                        }}
-                      >
-                        <ExpandMoreRoundedIcon />
-                      </IconButton>
-                    </Stack>
-                    <Collapse in={expandedCards.profitabilitySummary}>
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: 2,
-                        }}
-                      >
-                        <Box>
-                          <Typography
-                            color="text.secondary"
-                            variant="subtitle2"
-                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                          >
-                            Ganancia neta
-                          </Typography>
-                          <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 700,
-                              color: isProfitPositive ? "success.main" : "error.main",
-                              fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                            }}
-                          >
-                            {Number(kpis.totalProfit ?? 0).toLocaleString("es-CO", {
-                              style: "currency",
-                              currency: "COP",
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            })}
-                          </Typography>
-                          <Typography
-                            color="text.secondary"
-                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                          >
-                            {`Costo total: ${Number(kpis.totalCost ?? 0).toLocaleString("es-CO", {
-                              style: "currency",
-                              currency: "COP",
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            })}`}
-                          </Typography>
-                        </Box>
-
-                        <Box>
-                          <Typography
-                            color="text.secondary"
-                            variant="subtitle2"
-                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                          >
-                            Margen neto
-                          </Typography>
-                          <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 700,
-                              color: isNetMarginPositive ? "success.main" : "error.main",
-                              fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                            }}
-                          >
-                            {`${kpis.netMarginPercent}%`}
-                          </Typography>
-                          <Typography
-                            color="text.secondary"
-                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                          >
-                            Utilidad / ventas del día
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Collapse>
-                  </Stack>
-                </Paper>
+                <ProfitabilitySummaryCard
+                  glassCardSx={glassCardSx}
+                  isExpanded={expandedCards.profitabilitySummary}
+                  onToggle={() => toggleCard("profitabilitySummary")}
+                  totalProfit={kpis.totalProfit}
+                  totalCost={kpis.totalCost}
+                  netMarginPercent={kpis.netMarginPercent}
+                />
               </Grow>
             </Grid>
           </Grid>
@@ -309,118 +143,15 @@ const Dashboard = () => {
           <Grid container spacing={3}>
             <Grid size={{ xs: 12 }}>
               <Grow in timeout={860}>
-                <Paper elevation={0} sx={glassCardSx}>
-                  <Stack spacing={2}>
-                    <Stack
-                      direction={{ xs: "column", sm: "row" }}
-                      alignItems={{ xs: "flex-start", sm: "center" }}
-                      justifyContent="space-between"
-                      spacing={1}
-                    >
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Typography
-                          variant="h6"
-                          sx={{ fontWeight: 700, cursor: "pointer" }}
-                          onClick={() => toggleCard("businessSummary")}
-                        >
-                          Resumen financiero del negocio
-                        </Typography>
-                        <Chip
-                          size="small"
-                          color={isPotentialPositive ? "success" : "error"}
-                          label={
-                            isPotentialPositive
-                              ? "Utilidad potencial positiva"
-                              : "Utilidad potencial negativa"
-                          }
-                        />
-                      </Stack>
-                      <IconButton
-                        size="small"
-                        onClick={() => toggleCard("businessSummary")}
-                        sx={{
-                          transform: expandedCards.businessSummary
-                            ? "rotate(0deg)"
-                            : "rotate(-90deg)",
-                          transition: "transform .2s ease",
-                        }}
-                      >
-                        <ExpandMoreRoundedIcon />
-                      </IconButton>
-                    </Stack>
-
-                    <Collapse in={expandedCards.businessSummary}>
-                      <Stack spacing={2}>
-                        <Divider />
-
-                        <Box
-                          sx={{
-                            display: "grid",
-                            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
-                            gap: 2,
-                          }}
-                        >
-                          <Box>
-                            <Typography color="text.secondary" variant="subtitle2">
-                              Costo total neto
-                            </Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                              {Number(kpis.totalBusinessNetCost ?? 0).toLocaleString("es-CO", {
-                                style: "currency",
-                                currency: "COP",
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}
-                            </Typography>
-                            <Typography color="text.secondary" variant="body2">
-                              Suma de todos los lotes
-                            </Typography>
-                          </Box>
-
-                          <Box>
-                            <Typography color="text.secondary" variant="subtitle2">
-                              Valor del negocio
-                            </Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                              {Number(kpis.totalBusinessSaleValue ?? 0).toLocaleString("es-CO", {
-                                style: "currency",
-                                currency: "COP",
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}
-                            </Typography>
-                            <Typography color="text.secondary" variant="body2">
-                              Inventario a precio de venta
-                            </Typography>
-                          </Box>
-
-                          <Box>
-                            <Typography color="text.secondary" variant="subtitle2">
-                              Utilidad potencial
-                            </Typography>
-                            <Typography
-                              variant="h5"
-                              sx={{
-                                fontWeight: 800,
-                                color: isPotentialPositive ? "success.main" : "error.main",
-                              }}
-                            >
-                              {Number(potentialInventoryProfit).toLocaleString("es-CO", {
-                                style: "currency",
-                                currency: "COP",
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}
-                            </Typography>
-                            <Typography color="text.secondary" variant="body2">
-                              Valor del negocio - costo total neto
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Stack>
-                    </Collapse>
-                  </Stack>
-                </Paper>
+                <BusinessFinancialSummaryCard
+                  glassCardSx={glassCardSx}
+                  isExpanded={expandedCards.businessSummary}
+                  onToggle={() => toggleCard("businessSummary")}
+                  isPotentialPositive={isPotentialPositive}
+                  totalBusinessNetCost={kpis.totalBusinessNetCost}
+                  totalBusinessSaleValue={kpis.totalBusinessSaleValue}
+                  potentialInventoryProfit={potentialInventoryProfit}
+                />
               </Grow>
             </Grid>
           </Grid>
@@ -437,6 +168,7 @@ const Dashboard = () => {
             <Grid size={{ xs: 12, lg: 8 }}>
               <Fade in timeout={920}>
                 <Paper
+                  onClick={() => toggleCard("recentSales")}
                   elevation={0}
                   sx={{
                     ...glassCardSx,
@@ -445,26 +177,25 @@ const Dashboard = () => {
                     maxHeight: { xs: 400, sm: 450, lg: "none" },
                   }}
                 >
-                  <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
+                  <Stack spacing={expandedCards.recentSales ? 2 : 0} sx={{ flex: 1, minHeight: 0 }}>
                     <Stack
                       direction="row"
                       alignItems="center"
                       justifyContent="space-between"
-                      sx={{ flexShrink: 0 }}
+                      sx={{ flexShrink: 0, minHeight: { xs: 38, sm: 42 } }}
                     >
                       <Stack direction="row" alignItems="center" spacing={1}>
-                        <Typography
-                          variant="h6"
-                          sx={{ fontWeight: 600, cursor: "pointer" }}
-                          onClick={() => toggleCard("recentSales")}
-                        >
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
                           Ventas recientes
                         </Typography>
                         <Chip label="Hoy" size="small" color="primary" variant="outlined" />
                       </Stack>
                       <IconButton
                         size="small"
-                        onClick={() => toggleCard("recentSales")}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleCard("recentSales");
+                        }}
                         sx={{
                           transform: expandedCards.recentSales ? "rotate(0deg)" : "rotate(-90deg)",
                           transition: "transform .2s ease",
@@ -473,7 +204,11 @@ const Dashboard = () => {
                         <ExpandMoreRoundedIcon />
                       </IconButton>
                     </Stack>
-                    <Collapse in={expandedCards.recentSales} sx={{ flex: 1, minHeight: 0 }}>
+                    <Collapse
+                      in={expandedCards.recentSales}
+                      unmountOnExit
+                      sx={{ flex: 1, minHeight: 0 }}
+                    >
                       <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
                         <Divider />
                         {isLoading ? (
@@ -495,7 +230,11 @@ const Dashboard = () => {
                                 <Box key={sale.id}>
                                   <ListItem disablePadding>
                                     <ListItemButton
-                                      onClick={() => handleOpenSaleDetail(sale)}
+                                      data-no-toggle="true"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        handleOpenSaleDetail(sale);
+                                      }}
                                       sx={{
                                         px: 2,
                                         borderRadius: 1,
@@ -525,19 +264,23 @@ const Dashboard = () => {
             </Grid>
             <Grid size={{ xs: 12, lg: 4 }}>
               <Fade in timeout={1020}>
-                <Paper elevation={0} sx={glassCardSx}>
-                  <Stack spacing={2}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                      <Typography
-                        variant="h6"
-                        sx={{ fontWeight: 600, cursor: "pointer" }}
-                        onClick={() => toggleCard("dailyGoal")}
-                      >
+                <Paper elevation={0} sx={glassCardSx} onClick={() => toggleCard("dailyGoal")}>
+                  <Stack spacing={expandedCards.dailyGoal ? 2 : 0}>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      sx={{ minHeight: { xs: 38, sm: 42 } }}
+                    >
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
                         Meta diaria
                       </Typography>
                       <IconButton
                         size="small"
-                        onClick={() => toggleCard("dailyGoal")}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleCard("dailyGoal");
+                        }}
                         sx={{
                           transform: expandedCards.dailyGoal ? "rotate(0deg)" : "rotate(-90deg)",
                           transition: "transform .2s ease",
@@ -546,7 +289,7 @@ const Dashboard = () => {
                         <ExpandMoreRoundedIcon />
                       </IconButton>
                     </Stack>
-                    <Collapse in={expandedCards.dailyGoal}>
+                    <Collapse in={expandedCards.dailyGoal} unmountOnExit>
                       <Stack spacing={2}>
                         <Typography color="text.secondary">$ 100000</Typography>
                         <LinearProgress

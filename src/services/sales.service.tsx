@@ -601,53 +601,66 @@ export async function getDashboardSalesData(limit = 8) {
     const totalItems = todaySales.reduce((sum, sale) => sum + Number(sale.totalItems ?? 0), 0);
     const avgTicket = todaySales.length ? Math.round(totalSales / todaySales.length) : 0;
 
-    const [lotCostSummary, inventorySaleValueSummary] = await Promise.all([
-      Lot.aggregate([{ $group: { _id: null, totalBusinessNetCost: { $sum: "$totalCost" } } }]),
-      Lot.aggregate([
-        { $unwind: "$items" },
-        {
-          $group: {
-            _id: "$items.product",
-            amount: {
-              $sum: {
-                $max: [0, { $ifNull: ["$items.remainingQuantity", "$items.quantity"] }],
+    const inventoryValuationSummary = await Lot.aggregate([
+      { $unwind: "$items" },
+      {
+        $project: {
+          product: "$items.product",
+          purchasePrice: { $toDouble: { $ifNull: ["$items.purchasePrice", 0] } },
+          availableQuantity: {
+            $max: [
+              0,
+              {
+                $toDouble: {
+                  $ifNull: ["$items.remainingQuantity", "$items.quantity"],
+                },
               },
-            },
+            ],
           },
         },
-        {
-          $lookup: {
-            from: "products",
-            localField: "_id",
-            foreignField: "_id",
-            as: "product",
+      },
+      {
+        $match: {
+          availableQuantity: { $gt: 0 },
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "product",
+          foreignField: "_id",
+          as: "productData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$productData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          lineNetCost: { $multiply: ["$availableQuantity", "$purchasePrice"] },
+          lineSaleValue: {
+            $multiply: [
+              "$availableQuantity",
+              { $toDouble: { $ifNull: ["$productData.sale_price", "0"] } },
+            ],
           },
         },
-        {
-          $unwind: {
-            path: "$product",
-            preserveNullAndEmptyArrays: true,
-          },
+      },
+      {
+        $group: {
+          _id: null,
+          totalBusinessNetCost: { $sum: "$lineNetCost" },
+          totalBusinessSaleValue: { $sum: "$lineSaleValue" },
         },
-        {
-          $project: {
-            lineValue: {
-              $multiply: ["$amount", { $toDouble: { $ifNull: ["$product.sale_price", "0"] } }],
-            },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalBusinessSaleValue: { $sum: "$lineValue" },
-          },
-        },
-      ]),
+      },
     ]);
 
-    const totalBusinessNetCost = Number(lotCostSummary[0]?.totalBusinessNetCost ?? 0);
+    const totalBusinessNetCost = Number(inventoryValuationSummary[0]?.totalBusinessNetCost ?? 0);
     const totalBusinessSaleValue = Number(
-      inventorySaleValueSummary[0]?.totalBusinessSaleValue ?? 0,
+      inventoryValuationSummary[0]?.totalBusinessSaleValue ?? 0,
     );
 
     return {

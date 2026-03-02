@@ -83,21 +83,22 @@ const SalesTrendChart = ({ glassCardSx }: SalesTrendChartProps) => {
   const xLabelStep = Math.max(Math.ceil(points.length / 8), 1);
 
   return (
-    <Paper elevation={0} sx={{ ...glassCardSx, width: "100%" }}>
-      <Stack spacing={3}>
+    <Paper
+      elevation={0}
+      sx={{ ...glassCardSx, width: "100%" }}
+      onClick={() => setIsExpanded((prev) => !prev)}
+    >
+      <Stack spacing={isExpanded ? 3 : 0}>
         <Stack
-          direction={{ xs: "column", md: "row" }}
+          direction="row"
           justifyContent="space-between"
-          alignItems={{ xs: "stretch", md: "center" }}
+          alignItems="center"
           spacing={2}
+          sx={{ minHeight: { xs: 38, sm: 42 } }}
         >
           <Stack direction="row" alignItems="center" spacing={1}>
             <Box>
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 600, cursor: "pointer" }}
-                onClick={() => setIsExpanded((prev) => !prev)}
-              >
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Ventas por día
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -106,7 +107,10 @@ const SalesTrendChart = ({ glassCardSx }: SalesTrendChartProps) => {
             </Box>
             <IconButton
               size="small"
-              onClick={() => setIsExpanded((prev) => !prev)}
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsExpanded((prev) => !prev);
+              }}
               sx={{
                 transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)",
                 transition: "transform .2s ease",
@@ -115,68 +119,72 @@ const SalesTrendChart = ({ glassCardSx }: SalesTrendChartProps) => {
               <ExpandMoreRoundedIcon />
             </IconButton>
           </Stack>
-
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-            <FormControl size="small" sx={{ minWidth: 240 }}>
-              <InputLabel id="sales-trend-metric-label">Métrica</InputLabel>
-              <Select
-                labelId="sales-trend-metric-label"
-                value={metric}
-                label="Métrica"
-                onChange={(event) => setMetric(event.target.value as DashboardTrendMetric)}
-              >
-                <MenuItem value="grossSales">Total vendido por día</MenuItem>
-                <MenuItem value="netProfit">Valor neto ganado por día</MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl size="small" sx={{ minWidth: 190 }}>
-              <InputLabel id="sales-trend-range-label">Rango</InputLabel>
-              <Select
-                labelId="sales-trend-range-label"
-                value={rangeValue}
-                label="Rango"
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setRangeValue(nextValue === "custom" ? "custom" : Number(nextValue));
-                }}
-              >
-                {trendRangeOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {isCustomRange && (
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                <TextField
-                  label="Desde"
-                  type="date"
-                  size="small"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                  error={Boolean(customRangeError)}
-                  InputLabelProps={{ shrink: true }}
-                />
-                <TextField
-                  label="Hasta"
-                  type="date"
-                  size="small"
-                  value={endDate}
-                  onChange={(event) => setEndDate(event.target.value)}
-                  error={Boolean(customRangeError)}
-                  helperText={customRangeError || " "}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Stack>
-            )}
-          </Stack>
         </Stack>
 
-        <Collapse in={isExpanded}>
+        <Collapse in={isExpanded} unmountOnExit>
           <Stack spacing={3}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1.5}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <FormControl size="small" sx={{ minWidth: 240 }}>
+                <InputLabel id="sales-trend-metric-label">Métrica</InputLabel>
+                <Select
+                  labelId="sales-trend-metric-label"
+                  value={metric}
+                  label="Métrica"
+                  onChange={(event) => setMetric(event.target.value as DashboardTrendMetric)}
+                >
+                  <MenuItem value="grossSales">Total vendido por día</MenuItem>
+                  <MenuItem value="netProfit">Valor neto ganado por día</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl size="small" sx={{ minWidth: 190 }}>
+                <InputLabel id="sales-trend-range-label">Rango</InputLabel>
+                <Select
+                  labelId="sales-trend-range-label"
+                  value={rangeValue}
+                  label="Rango"
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setRangeValue(nextValue === "custom" ? "custom" : Number(nextValue));
+                  }}
+                >
+                  {trendRangeOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {isCustomRange && (
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                  <TextField
+                    label="Desde"
+                    type="date"
+                    size="small"
+                    value={startDate}
+                    onChange={(event) => setStartDate(event.target.value)}
+                    error={Boolean(customRangeError)}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    label="Hasta"
+                    type="date"
+                    size="small"
+                    value={endDate}
+                    onChange={(event) => setEndDate(event.target.value)}
+                    error={Boolean(customRangeError)}
+                    helperText={customRangeError || " "}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Stack>
+              )}
+            </Stack>
+
             {isCustomRange && customRangeError && (
               <Typography variant="body2" color="error">
                 {customRangeError}

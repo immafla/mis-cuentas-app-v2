@@ -57,9 +57,28 @@ const useDashboard = () => {
       backgroundColor: "rgba(255, 255, 255, 0.16)",
       backdropFilter: "blur(12px)",
       boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+      cursor: "pointer",
+      transition: "box-shadow .2s ease, background-color .2s ease, transform .2s ease",
       position: "relative",
       overflow: "hidden",
       isolation: "isolate",
+      "&:hover": {
+        backgroundColor: "rgba(255, 255, 255, 0.22)",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.14)",
+        transform: "translateY(-1px)",
+      },
+      "&::after": {
+        content: '""',
+        position: "absolute",
+        inset: 0,
+        background: "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02))",
+        opacity: 0,
+        pointerEvents: "none",
+        zIndex: 0,
+      },
+      "&:hover::after": {
+        animation: "fadeIn .22s ease-out forwards",
+      },
       "&::before": {
         content: '""',
         position: "absolute",
@@ -74,6 +93,14 @@ const useDashboard = () => {
       "& > *": {
         position: "relative",
         zIndex: 1,
+      },
+      "@keyframes fadeIn": {
+        "0%": {
+          opacity: 0,
+        },
+        "100%": {
+          opacity: 1,
+        },
       },
       "@keyframes glassShimmer": {
         "0%": {
