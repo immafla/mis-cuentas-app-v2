@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   Box,
+  Collapse,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -17,11 +18,13 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  IconButton,
   Paper,
   Stack,
   Typography,
   CircularProgress,
 } from "@mui/material";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import useDashboard from "./hooks/useDashboard";
 import { DashboardSale } from "./interfaces";
 import SalesTrendChart from "./SalesTrendChart";
@@ -30,6 +33,13 @@ import bgImage from "@/assets/images/bg.jpg";
 const Dashboard = () => {
   const { isLoading, recentSales, kpis, glassCardSx } = useDashboard();
   const [selectedSale, setSelectedSale] = useState<DashboardSale | null>(null);
+  const [expandedCards, setExpandedCards] = useState({
+    salesSummary: false,
+    profitabilitySummary: false,
+    businessSummary: false,
+    recentSales: false,
+    dailyGoal: false,
+  });
   const potentialInventoryProfit =
     Number(kpis.totalBusinessSaleValue ?? 0) - Number(kpis.totalBusinessNetCost ?? 0);
   const isPotentialPositive = potentialInventoryProfit >= 0;
@@ -42,6 +52,13 @@ const Dashboard = () => {
 
   const handleCloseSaleDetail = () => {
     setSelectedSale(null);
+  };
+
+  const toggleCard = (key: keyof typeof expandedCards) => {
+    setExpandedCards((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
   };
 
   return (
@@ -88,71 +105,89 @@ const Dashboard = () => {
               <Grow in timeout={420}>
                 <Paper elevation={0} sx={glassCardSx}>
                   <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      Resumen de ventas del día
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: 2,
-                      }}
-                    >
-                      <Box>
-                        <Typography
-                          color="text.secondary"
-                          variant="subtitle2"
-                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                        >
-                          Ventas del día
-                        </Typography>
-                        <Typography
-                          variant="h4"
-                          sx={{
-                            fontWeight: 700,
-                            color: "info.main",
-                            fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                          }}
-                        >
-                          {Number(kpis.totalSales ?? 0).toLocaleString("es-CO", {
-                            style: "currency",
-                            currency: "COP",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </Typography>
-                        <Typography
-                          color="text.secondary"
-                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                        >{`${kpis.salesCount} transacciones`}</Typography>
-                      </Box>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 700, cursor: "pointer" }}
+                        onClick={() => toggleCard("salesSummary")}
+                      >
+                        Resumen de ventas del día
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => toggleCard("salesSummary")}
+                        sx={{
+                          transform: expandedCards.salesSummary ? "rotate(0deg)" : "rotate(-90deg)",
+                          transition: "transform .2s ease",
+                        }}
+                      >
+                        <ExpandMoreRoundedIcon />
+                      </IconButton>
+                    </Stack>
+                    <Collapse in={expandedCards.salesSummary}>
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 2,
+                        }}
+                      >
+                        <Box>
+                          <Typography
+                            color="text.secondary"
+                            variant="subtitle2"
+                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                          >
+                            Ventas del día
+                          </Typography>
+                          <Typography
+                            variant="h4"
+                            sx={{
+                              fontWeight: 700,
+                              color: "info.main",
+                              fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                            }}
+                          >
+                            {Number(kpis.totalSales ?? 0).toLocaleString("es-CO", {
+                              style: "currency",
+                              currency: "COP",
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}
+                          </Typography>
+                          <Typography
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                          >{`${kpis.salesCount} transacciones`}</Typography>
+                        </Box>
 
-                      <Box>
-                        <Typography
-                          color="text.secondary"
-                          variant="subtitle2"
-                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                        >
-                          Productos vendidos
-                        </Typography>
-                        <Typography
-                          variant="h4"
-                          sx={{
-                            fontWeight: 700,
-                            color: "primary.main",
-                            fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                          }}
-                        >
-                          {kpis.totalItems}
-                        </Typography>
-                        <Typography
-                          color="text.secondary"
-                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                        >
-                          Total de unidades
-                        </Typography>
+                        <Box>
+                          <Typography
+                            color="text.secondary"
+                            variant="subtitle2"
+                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                          >
+                            Productos vendidos
+                          </Typography>
+                          <Typography
+                            variant="h4"
+                            sx={{
+                              fontWeight: 700,
+                              color: "primary.main",
+                              fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                            }}
+                          >
+                            {kpis.totalItems}
+                          </Typography>
+                          <Typography
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                          >
+                            Total de unidades
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
+                    </Collapse>
                   </Stack>
                 </Paper>
               </Grow>
@@ -162,78 +197,98 @@ const Dashboard = () => {
               <Grow in timeout={620}>
                 <Paper elevation={0} sx={glassCardSx}>
                   <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      Resumen de rentabilidad
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: 2,
-                      }}
-                    >
-                      <Box>
-                        <Typography
-                          color="text.secondary"
-                          variant="subtitle2"
-                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                        >
-                          Ganancia neta
-                        </Typography>
-                        <Typography
-                          variant="h4"
-                          sx={{
-                            fontWeight: 700,
-                            color: isProfitPositive ? "success.main" : "error.main",
-                            fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                          }}
-                        >
-                          {Number(kpis.totalProfit ?? 0).toLocaleString("es-CO", {
-                            style: "currency",
-                            currency: "COP",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </Typography>
-                        <Typography
-                          color="text.secondary"
-                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                        >
-                          {`Costo total: ${Number(kpis.totalCost ?? 0).toLocaleString("es-CO", {
-                            style: "currency",
-                            currency: "COP",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}`}
-                        </Typography>
-                      </Box>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 700, cursor: "pointer" }}
+                        onClick={() => toggleCard("profitabilitySummary")}
+                      >
+                        Resumen de rentabilidad
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => toggleCard("profitabilitySummary")}
+                        sx={{
+                          transform: expandedCards.profitabilitySummary
+                            ? "rotate(0deg)"
+                            : "rotate(-90deg)",
+                          transition: "transform .2s ease",
+                        }}
+                      >
+                        <ExpandMoreRoundedIcon />
+                      </IconButton>
+                    </Stack>
+                    <Collapse in={expandedCards.profitabilitySummary}>
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 2,
+                        }}
+                      >
+                        <Box>
+                          <Typography
+                            color="text.secondary"
+                            variant="subtitle2"
+                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                          >
+                            Ganancia neta
+                          </Typography>
+                          <Typography
+                            variant="h4"
+                            sx={{
+                              fontWeight: 700,
+                              color: isProfitPositive ? "success.main" : "error.main",
+                              fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                            }}
+                          >
+                            {Number(kpis.totalProfit ?? 0).toLocaleString("es-CO", {
+                              style: "currency",
+                              currency: "COP",
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}
+                          </Typography>
+                          <Typography
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                          >
+                            {`Costo total: ${Number(kpis.totalCost ?? 0).toLocaleString("es-CO", {
+                              style: "currency",
+                              currency: "COP",
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}`}
+                          </Typography>
+                        </Box>
 
-                      <Box>
-                        <Typography
-                          color="text.secondary"
-                          variant="subtitle2"
-                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                        >
-                          Margen neto
-                        </Typography>
-                        <Typography
-                          variant="h4"
-                          sx={{
-                            fontWeight: 700,
-                            color: isNetMarginPositive ? "success.main" : "error.main",
-                            fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                          }}
-                        >
-                          {`${kpis.netMarginPercent}%`}
-                        </Typography>
-                        <Typography
-                          color="text.secondary"
-                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-                        >
-                          Utilidad / ventas del día
-                        </Typography>
+                        <Box>
+                          <Typography
+                            color="text.secondary"
+                            variant="subtitle2"
+                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                          >
+                            Margen neto
+                          </Typography>
+                          <Typography
+                            variant="h4"
+                            sx={{
+                              fontWeight: 700,
+                              color: isNetMarginPositive ? "success.main" : "error.main",
+                              fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                            }}
+                          >
+                            {`${kpis.netMarginPercent}%`}
+                          </Typography>
+                          <Typography
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                          >
+                            Utilidad / ventas del día
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
+                    </Collapse>
                   </Stack>
                 </Paper>
               </Grow>
@@ -262,86 +317,108 @@ const Dashboard = () => {
                       justifyContent="space-between"
                       spacing={1}
                     >
-                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        Resumen financiero del negocio
-                      </Typography>
-                      <Chip
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <Typography
+                          variant="h6"
+                          sx={{ fontWeight: 700, cursor: "pointer" }}
+                          onClick={() => toggleCard("businessSummary")}
+                        >
+                          Resumen financiero del negocio
+                        </Typography>
+                        <Chip
+                          size="small"
+                          color={isPotentialPositive ? "success" : "error"}
+                          label={
+                            isPotentialPositive
+                              ? "Utilidad potencial positiva"
+                              : "Utilidad potencial negativa"
+                          }
+                        />
+                      </Stack>
+                      <IconButton
                         size="small"
-                        color={isPotentialPositive ? "success" : "error"}
-                        label={
-                          isPotentialPositive
-                            ? "Utilidad potencial positiva"
-                            : "Utilidad potencial negativa"
-                        }
-                      />
+                        onClick={() => toggleCard("businessSummary")}
+                        sx={{
+                          transform: expandedCards.businessSummary
+                            ? "rotate(0deg)"
+                            : "rotate(-90deg)",
+                          transition: "transform .2s ease",
+                        }}
+                      >
+                        <ExpandMoreRoundedIcon />
+                      </IconButton>
                     </Stack>
 
-                    <Divider />
+                    <Collapse in={expandedCards.businessSummary}>
+                      <Stack spacing={2}>
+                        <Divider />
 
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
-                        gap: 2,
-                      }}
-                    >
-                      <Box>
-                        <Typography color="text.secondary" variant="subtitle2">
-                          Costo total neto
-                        </Typography>
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                          {Number(kpis.totalBusinessNetCost ?? 0).toLocaleString("es-CO", {
-                            style: "currency",
-                            currency: "COP",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </Typography>
-                        <Typography color="text.secondary" variant="body2">
-                          Suma de todos los lotes
-                        </Typography>
-                      </Box>
-
-                      <Box>
-                        <Typography color="text.secondary" variant="subtitle2">
-                          Valor del negocio
-                        </Typography>
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                          {Number(kpis.totalBusinessSaleValue ?? 0).toLocaleString("es-CO", {
-                            style: "currency",
-                            currency: "COP",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </Typography>
-                        <Typography color="text.secondary" variant="body2">
-                          Inventario a precio de venta
-                        </Typography>
-                      </Box>
-
-                      <Box>
-                        <Typography color="text.secondary" variant="subtitle2">
-                          Utilidad potencial
-                        </Typography>
-                        <Typography
-                          variant="h5"
+                        <Box
                           sx={{
-                            fontWeight: 800,
-                            color: isPotentialPositive ? "success.main" : "error.main",
+                            display: "grid",
+                            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
+                            gap: 2,
                           }}
                         >
-                          {Number(potentialInventoryProfit).toLocaleString("es-CO", {
-                            style: "currency",
-                            currency: "COP",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </Typography>
-                        <Typography color="text.secondary" variant="body2">
-                          Valor del negocio - costo total neto
-                        </Typography>
-                      </Box>
-                    </Box>
+                          <Box>
+                            <Typography color="text.secondary" variant="subtitle2">
+                              Costo total neto
+                            </Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                              {Number(kpis.totalBusinessNetCost ?? 0).toLocaleString("es-CO", {
+                                style: "currency",
+                                currency: "COP",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                            </Typography>
+                            <Typography color="text.secondary" variant="body2">
+                              Suma de todos los lotes
+                            </Typography>
+                          </Box>
+
+                          <Box>
+                            <Typography color="text.secondary" variant="subtitle2">
+                              Valor del negocio
+                            </Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                              {Number(kpis.totalBusinessSaleValue ?? 0).toLocaleString("es-CO", {
+                                style: "currency",
+                                currency: "COP",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                            </Typography>
+                            <Typography color="text.secondary" variant="body2">
+                              Inventario a precio de venta
+                            </Typography>
+                          </Box>
+
+                          <Box>
+                            <Typography color="text.secondary" variant="subtitle2">
+                              Utilidad potencial
+                            </Typography>
+                            <Typography
+                              variant="h5"
+                              sx={{
+                                fontWeight: 800,
+                                color: isPotentialPositive ? "success.main" : "error.main",
+                              }}
+                            >
+                              {Number(potentialInventoryProfit).toLocaleString("es-CO", {
+                                style: "currency",
+                                currency: "COP",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                            </Typography>
+                            <Typography color="text.secondary" variant="body2">
+                              Valor del negocio - costo total neto
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Stack>
+                    </Collapse>
                   </Stack>
                 </Paper>
               </Grow>
@@ -375,53 +452,73 @@ const Dashboard = () => {
                       justifyContent="space-between"
                       sx={{ flexShrink: 0 }}
                     >
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        Ventas recientes
-                      </Typography>
-                      <Chip label="Hoy" size="small" color="primary" variant="outlined" />
-                    </Stack>
-                    <Divider />
-                    {isLoading ? (
-                      <Stack alignItems="center" justifyContent="center" sx={{ py: 4 }}>
-                        <CircularProgress size={28} />
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <Typography
+                          variant="h6"
+                          sx={{ fontWeight: 600, cursor: "pointer" }}
+                          onClick={() => toggleCard("recentSales")}
+                        >
+                          Ventas recientes
+                        </Typography>
+                        <Chip label="Hoy" size="small" color="primary" variant="outlined" />
                       </Stack>
-                    ) : (
-                      <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
-                        <List disablePadding>
-                          {recentSales.length === 0 && (
-                            <ListItem sx={{ px: 0 }}>
-                              <ListItemText
-                                primary="Sin ventas registradas"
-                                secondary="Cuando se registren ventas aparecerán aquí"
-                              />
-                            </ListItem>
-                          )}
-                          {recentSales.map((sale, index) => (
-                            <Box key={sale.id}>
-                              <ListItem disablePadding>
-                                <ListItemButton
-                                  onClick={() => handleOpenSaleDetail(sale)}
-                                  sx={{
-                                    px: 2,
-                                    borderRadius: 1,
-                                    "&:hover": { backgroundColor: "action.hover" },
-                                  }}
-                                >
+                      <IconButton
+                        size="small"
+                        onClick={() => toggleCard("recentSales")}
+                        sx={{
+                          transform: expandedCards.recentSales ? "rotate(0deg)" : "rotate(-90deg)",
+                          transition: "transform .2s ease",
+                        }}
+                      >
+                        <ExpandMoreRoundedIcon />
+                      </IconButton>
+                    </Stack>
+                    <Collapse in={expandedCards.recentSales} sx={{ flex: 1, minHeight: 0 }}>
+                      <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
+                        <Divider />
+                        {isLoading ? (
+                          <Stack alignItems="center" justifyContent="center" sx={{ py: 4 }}>
+                            <CircularProgress size={28} />
+                          </Stack>
+                        ) : (
+                          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+                            <List disablePadding>
+                              {recentSales.length === 0 && (
+                                <ListItem sx={{ px: 0 }}>
                                   <ListItemText
-                                    primary={sale.customer}
-                                    secondary={`${sale.items} items · ${new Date(sale.soldAt).toLocaleString("es-CO")} · Haz click para ver detalle`}
+                                    primary="Sin ventas registradas"
+                                    secondary="Cuando se registren ventas aparecerán aquí"
                                   />
-                                  <Typography
-                                    sx={{ fontWeight: 600 }}
-                                  >{`$ ${sale.total}`}</Typography>
-                                </ListItemButton>
-                              </ListItem>
-                              {index < recentSales.length - 1 && <Divider />}
-                            </Box>
-                          ))}
-                        </List>
-                      </Box>
-                    )}
+                                </ListItem>
+                              )}
+                              {recentSales.map((sale, index) => (
+                                <Box key={sale.id}>
+                                  <ListItem disablePadding>
+                                    <ListItemButton
+                                      onClick={() => handleOpenSaleDetail(sale)}
+                                      sx={{
+                                        px: 2,
+                                        borderRadius: 1,
+                                        "&:hover": { backgroundColor: "action.hover" },
+                                      }}
+                                    >
+                                      <ListItemText
+                                        primary={sale.customer}
+                                        secondary={`${sale.items} items · ${new Date(sale.soldAt).toLocaleString("es-CO")} · Haz click para ver detalle`}
+                                      />
+                                      <Typography
+                                        sx={{ fontWeight: 600 }}
+                                      >{`$ ${sale.total}`}</Typography>
+                                    </ListItemButton>
+                                  </ListItem>
+                                  {index < recentSales.length - 1 && <Divider />}
+                                </Box>
+                              ))}
+                            </List>
+                          </Box>
+                        )}
+                      </Stack>
+                    </Collapse>
                   </Stack>
                 </Paper>
               </Fade>
@@ -430,18 +527,38 @@ const Dashboard = () => {
               <Fade in timeout={1020}>
                 <Paper elevation={0} sx={glassCardSx}>
                   <Stack spacing={2}>
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Meta diaria
-                    </Typography>
-                    <Typography color="text.secondary">$ 100000</Typography>
-                    <LinearProgress
-                      variant="determinate"
-                      value={kpis.goalProgress}
-                      sx={{ height: 10, borderRadius: 5 }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      {`${kpis.goalProgress}% completado`}
-                    </Typography>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 600, cursor: "pointer" }}
+                        onClick={() => toggleCard("dailyGoal")}
+                      >
+                        Meta diaria
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => toggleCard("dailyGoal")}
+                        sx={{
+                          transform: expandedCards.dailyGoal ? "rotate(0deg)" : "rotate(-90deg)",
+                          transition: "transform .2s ease",
+                        }}
+                      >
+                        <ExpandMoreRoundedIcon />
+                      </IconButton>
+                    </Stack>
+                    <Collapse in={expandedCards.dailyGoal}>
+                      <Stack spacing={2}>
+                        <Typography color="text.secondary">$ 100000</Typography>
+                        <LinearProgress
+                          variant="determinate"
+                          value={kpis.goalProgress}
+                          sx={{ height: 10, borderRadius: 5 }}
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                          {`${kpis.goalProgress}% completado`}
+                        </Typography>
+                      </Stack>
+                    </Collapse>
                   </Stack>
                 </Paper>
               </Fade>

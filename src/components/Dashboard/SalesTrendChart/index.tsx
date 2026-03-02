@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   Box,
+  Collapse,
   CircularProgress,
   FormControl,
+  IconButton,
   InputLabel,
   MenuItem,
   Paper,
@@ -12,6 +16,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 
 import { DashboardTrendMetric } from "@/services/sales.service";
 import useSalesTrendChart from "./hooks/useSalesTrendChart";
@@ -28,6 +33,7 @@ const formatCurrency = (value: number) =>
   }).format(value);
 
 const SalesTrendChart = ({ glassCardSx }: SalesTrendChartProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const {
     isLoading,
     metric,
@@ -85,14 +91,30 @@ const SalesTrendChart = ({ glassCardSx }: SalesTrendChartProps) => {
           alignItems={{ xs: "stretch", md: "center" }}
           spacing={2}
         >
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Ventas por día
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Eje Y: valores en pesos · Eje X: días
-            </Typography>
-          </Box>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 600, cursor: "pointer" }}
+                onClick={() => setIsExpanded((prev) => !prev)}
+              >
+                Ventas por día
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Eje Y: valores en pesos · Eje X: días
+              </Typography>
+            </Box>
+            <IconButton
+              size="small"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              sx={{
+                transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+                transition: "transform .2s ease",
+              }}
+            >
+              <ExpandMoreRoundedIcon />
+            </IconButton>
+          </Stack>
 
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             <FormControl size="small" sx={{ minWidth: 240 }}>
@@ -153,106 +175,107 @@ const SalesTrendChart = ({ glassCardSx }: SalesTrendChartProps) => {
           </Stack>
         </Stack>
 
-        {isCustomRange && customRangeError && (
-          <Typography variant="body2" color="error">
-            {customRangeError}
-          </Typography>
-        )}
+        <Collapse in={isExpanded}>
+          <Stack spacing={3}>
+            {isCustomRange && customRangeError && (
+              <Typography variant="body2" color="error">
+                {customRangeError}
+              </Typography>
+            )}
 
-        {isLoading ? (
-          <Stack alignItems="center" justifyContent="center" sx={{ minHeight: 280 }}>
-            <CircularProgress size={30} />
-          </Stack>
-        ) : points.length === 0 ? (
-          <Stack alignItems="center" justifyContent="center" sx={{ minHeight: 280 }}>
-            <Typography color="text.secondary">No hay datos en el rango seleccionado.</Typography>
-          </Stack>
-        ) : (
-          <Box sx={{ width: "100%", overflowX: "auto" }}>
-            <Box sx={{ minWidth: 760 }}>
-              <svg
-                width="100%"
-                viewBox={`0 0 ${width} ${height}`}
-                role="img"
-                aria-label={metricLabel}
-              >
-                <line
-                  x1={padding.left}
-                  y1={padding.top + chartHeight}
-                  x2={padding.left + chartWidth}
-                  y2={padding.top + chartHeight}
-                  stroke="currentColor"
-                  opacity={0.4}
-                />
-                <line
-                  x1={padding.left}
-                  y1={padding.top}
-                  x2={padding.left}
-                  y2={padding.top + chartHeight}
-                  stroke="currentColor"
-                  opacity={0.4}
-                />
+            {isLoading ? (
+              <Stack alignItems="center" justifyContent="center" sx={{ minHeight: 280 }}>
+                <CircularProgress size={30} />
+              </Stack>
+            ) : points.length === 0 ? (
+              <Stack alignItems="center" justifyContent="center" sx={{ minHeight: 280 }}>
+                <Typography color="text.secondary">
+                  No hay datos en el rango seleccionado.
+                </Typography>
+              </Stack>
+            ) : (
+              <Box sx={{ width: "100%", overflowX: "auto" }}>
+                <Box sx={{ minWidth: 760 }}>
+                  <svg width="100%" viewBox={`0 0 ${width} ${height}`} aria-label={metricLabel}>
+                    <line
+                      x1={padding.left}
+                      y1={padding.top + chartHeight}
+                      x2={padding.left + chartWidth}
+                      y2={padding.top + chartHeight}
+                      stroke="currentColor"
+                      opacity={0.4}
+                    />
+                    <line
+                      x1={padding.left}
+                      y1={padding.top}
+                      x2={padding.left}
+                      y2={padding.top + chartHeight}
+                      stroke="currentColor"
+                      opacity={0.4}
+                    />
 
-                {yTickValues.map((tickValue) => {
-                  const y = padding.top + chartHeight - (tickValue / maxValue) * chartHeight;
+                    {yTickValues.map((tickValue) => {
+                      const y = padding.top + chartHeight - (tickValue / maxValue) * chartHeight;
 
-                  return (
-                    <g key={tickValue}>
-                      <line
-                        x1={padding.left}
-                        y1={y}
-                        x2={padding.left + chartWidth}
-                        y2={y}
+                      return (
+                        <g key={tickValue}>
+                          <line
+                            x1={padding.left}
+                            y1={y}
+                            x2={padding.left + chartWidth}
+                            y2={y}
+                            stroke="currentColor"
+                            opacity={0.12}
+                          />
+                          <text
+                            x={padding.left - 10}
+                            y={y + 4}
+                            textAnchor="end"
+                            fill="currentColor"
+                            opacity={0.7}
+                            style={{ fontSize: 11 }}
+                          >
+                            {formatCurrency(tickValue)}
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {linePath && (
+                      <path
+                        d={linePath}
+                        fill="none"
                         stroke="currentColor"
-                        opacity={0.12}
+                        strokeWidth={2.5}
+                        opacity={0.85}
                       />
-                      <text
-                        x={padding.left - 10}
-                        y={y + 4}
-                        textAnchor="end"
-                        fill="currentColor"
-                        opacity={0.7}
-                        style={{ fontSize: 11 }}
-                      >
-                        {formatCurrency(tickValue)}
-                      </text>
-                    </g>
-                  );
-                })}
-
-                {linePath && (
-                  <path
-                    d={linePath}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                    opacity={0.85}
-                  />
-                )}
-
-                {pointCoordinates.map((point, index) => (
-                  <g key={point.key}>
-                    <circle cx={point.x} cy={point.y} r={3.5} fill="currentColor" opacity={0.9}>
-                      <title>{`${point.label}: ${formatCurrency(point.value)}`}</title>
-                    </circle>
-                    {(index % xLabelStep === 0 || index === pointCoordinates.length - 1) && (
-                      <text
-                        x={point.x}
-                        y={padding.top + chartHeight + 20}
-                        textAnchor="middle"
-                        fill="currentColor"
-                        opacity={0.7}
-                        style={{ fontSize: 11 }}
-                      >
-                        {point.label}
-                      </text>
                     )}
-                  </g>
-                ))}
-              </svg>
-            </Box>
-          </Box>
-        )}
+
+                    {pointCoordinates.map((point, index) => (
+                      <g key={point.key}>
+                        <circle cx={point.x} cy={point.y} r={3.5} fill="currentColor" opacity={0.9}>
+                          <title>{`${point.label}: ${formatCurrency(point.value)}`}</title>
+                        </circle>
+                        {(index % xLabelStep === 0 || index === pointCoordinates.length - 1) && (
+                          <text
+                            x={point.x}
+                            y={padding.top + chartHeight + 20}
+                            textAnchor="middle"
+                            fill="currentColor"
+                            opacity={0.7}
+                            style={{ fontSize: 11 }}
+                          >
+                            {point.label}
+                          </text>
+                        )}
+                      </g>
+                    ))}
+                  </svg>
+                </Box>
+              </Box>
+            )}
+          </Stack>
+        </Collapse>
       </Stack>
     </Paper>
   );
