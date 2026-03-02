@@ -27,8 +27,10 @@ const getProductOptionLabel = (option: ProductOption) => {
   const category = String(option.category_name ?? "").trim();
   const brand = String(option.brand_name ?? "").trim();
   const name = String(option.name ?? "").trim();
+  const contentRaw = String(option.content ?? "").trim();
+  const content = contentRaw ? `${contentRaw}ml` : "";
 
-  return [category, brand, name].filter(Boolean).join(" ");
+  return [category, brand, name, content].filter(Boolean).join(" ");
 };
 
 export const NewLotModal: FC<{

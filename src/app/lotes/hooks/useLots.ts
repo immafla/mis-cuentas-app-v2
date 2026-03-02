@@ -16,6 +16,7 @@ export type ProductOption = {
   name: string;
   bar_code: string;
   amount: number;
+  content?: string | number;
   brand_name?: string;
   category_name?: string;
 };
