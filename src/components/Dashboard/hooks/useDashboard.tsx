@@ -16,6 +16,8 @@ const useDashboard = () => {
     avgTicket: 0,
     salesCount: 0,
     goalProgress: 0,
+    totalBusinessNetCost: 0,
+    totalBusinessSaleValue: 0,
   });
 
   useEffect(() => {

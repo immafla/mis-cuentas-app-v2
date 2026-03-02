@@ -30,6 +30,11 @@ import bgImage from "@/assets/images/bg.jpg";
 const Dashboard = () => {
   const { isLoading, recentSales, kpis, glassCardSx } = useDashboard();
   const [selectedSale, setSelectedSale] = useState<DashboardSale | null>(null);
+  const potentialInventoryProfit =
+    Number(kpis.totalBusinessSaleValue ?? 0) - Number(kpis.totalBusinessNetCost ?? 0);
+  const isPotentialPositive = potentialInventoryProfit >= 0;
+  const isProfitPositive = Number(kpis.totalProfit ?? 0) >= 0;
+  const isNetMarginPositive = Number(kpis.netMarginPercent ?? 0) >= 0;
 
   const handleOpenSaleDetail = (sale: DashboardSale) => {
     setSelectedSale(sale);
@@ -79,81 +84,264 @@ const Dashboard = () => {
           </Fade>
 
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Grow in timeout={420}>
                 <Paper elevation={0} sx={glassCardSx}>
-                  <Stack spacing={1}>
-                    <Typography color="text.secondary" variant="subtitle2">
-                      Ventas del día
+                  <Stack spacing={{ xs: 1.5, sm: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      Resumen de ventas del día
                     </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                      {Number(kpis.totalSales ?? 0).toLocaleString("es-CO", {
-                        style: "currency",
-                        currency: "COP",
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
-                    </Typography>
-                    <Typography color="text.secondary">
-                      {`${kpis.salesCount} transacciones`}
-                    </Typography>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 2,
+                      }}
+                    >
+                      <Box>
+                        <Typography
+                          color="text.secondary"
+                          variant="subtitle2"
+                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                        >
+                          Ventas del día
+                        </Typography>
+                        <Typography
+                          variant="h4"
+                          sx={{
+                            fontWeight: 700,
+                            color: "info.main",
+                            fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                          }}
+                        >
+                          {Number(kpis.totalSales ?? 0).toLocaleString("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </Typography>
+                        <Typography
+                          color="text.secondary"
+                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                        >{`${kpis.salesCount} transacciones`}</Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          color="text.secondary"
+                          variant="subtitle2"
+                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                        >
+                          Productos vendidos
+                        </Typography>
+                        <Typography
+                          variant="h4"
+                          sx={{
+                            fontWeight: 700,
+                            color: "primary.main",
+                            fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                          }}
+                        >
+                          {kpis.totalItems}
+                        </Typography>
+                        <Typography
+                          color="text.secondary"
+                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                        >
+                          Total de unidades
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Stack>
                 </Paper>
               </Grow>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-              <Grow in timeout={520}>
-                <Paper elevation={0} sx={glassCardSx}>
-                  <Stack spacing={1}>
-                    <Typography color="text.secondary" variant="subtitle2">
-                      Productos vendidos
-                    </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                      {kpis.totalItems}
-                    </Typography>
-                    <Typography color="text.secondary">Total de unidades</Typography>
-                  </Stack>
-                </Paper>
-              </Grow>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Grow in timeout={620}>
                 <Paper elevation={0} sx={glassCardSx}>
-                  <Stack spacing={1}>
-                    <Typography color="text.secondary" variant="subtitle2">
-                      Ganancia neta
+                  <Stack spacing={{ xs: 1.5, sm: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      Resumen de rentabilidad
                     </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                      {Number(kpis.totalProfit ?? 0).toLocaleString("es-CO", {
-                        style: "currency",
-                        currency: "COP",
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
-                    </Typography>
-                    <Typography color="text.secondary">
-                      {`Costo total: ${Number(kpis.totalCost ?? 0).toLocaleString("es-CO", {
-                        style: "currency",
-                        currency: "COP",
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}`}
-                    </Typography>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 2,
+                      }}
+                    >
+                      <Box>
+                        <Typography
+                          color="text.secondary"
+                          variant="subtitle2"
+                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                        >
+                          Ganancia neta
+                        </Typography>
+                        <Typography
+                          variant="h4"
+                          sx={{
+                            fontWeight: 700,
+                            color: isProfitPositive ? "success.main" : "error.main",
+                            fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                          }}
+                        >
+                          {Number(kpis.totalProfit ?? 0).toLocaleString("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </Typography>
+                        <Typography
+                          color="text.secondary"
+                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                        >
+                          {`Costo total: ${Number(kpis.totalCost ?? 0).toLocaleString("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}`}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          color="text.secondary"
+                          variant="subtitle2"
+                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                        >
+                          Margen neto
+                        </Typography>
+                        <Typography
+                          variant="h4"
+                          sx={{
+                            fontWeight: 700,
+                            color: isNetMarginPositive ? "success.main" : "error.main",
+                            fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                          }}
+                        >
+                          {`${kpis.netMarginPercent}%`}
+                        </Typography>
+                        <Typography
+                          color="text.secondary"
+                          sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                        >
+                          Utilidad / ventas del día
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Stack>
                 </Paper>
               </Grow>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-              <Grow in timeout={720}>
+          </Grid>
+
+          <Fade in timeout={780}>
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                Valor del negocio
+              </Typography>
+              <Typography color="text.secondary">
+                Costo acumulado de lotes y valorización del inventario a precio de venta.
+              </Typography>
+            </Box>
+          </Fade>
+
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12 }}>
+              <Grow in timeout={860}>
                 <Paper elevation={0} sx={glassCardSx}>
-                  <Stack spacing={1}>
-                    <Typography color="text.secondary" variant="subtitle2">
-                      Margen neto
-                    </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                      {`${kpis.netMarginPercent}%`}
-                    </Typography>
-                    <Typography color="text.secondary">Utilidad / ventas del día</Typography>
+                  <Stack spacing={2}>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      alignItems={{ xs: "flex-start", sm: "center" }}
+                      justifyContent="space-between"
+                      spacing={1}
+                    >
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        Resumen financiero del negocio
+                      </Typography>
+                      <Chip
+                        size="small"
+                        color={isPotentialPositive ? "success" : "error"}
+                        label={
+                          isPotentialPositive
+                            ? "Utilidad potencial positiva"
+                            : "Utilidad potencial negativa"
+                        }
+                      />
+                    </Stack>
+
+                    <Divider />
+
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
+                        gap: 2,
+                      }}
+                    >
+                      <Box>
+                        <Typography color="text.secondary" variant="subtitle2">
+                          Costo total neto
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                          {Number(kpis.totalBusinessNetCost ?? 0).toLocaleString("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          Suma de todos los lotes
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography color="text.secondary" variant="subtitle2">
+                          Valor del negocio
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                          {Number(kpis.totalBusinessSaleValue ?? 0).toLocaleString("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          Inventario a precio de venta
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography color="text.secondary" variant="subtitle2">
+                          Utilidad potencial
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            fontWeight: 800,
+                            color: isPotentialPositive ? "success.main" : "error.main",
+                          }}
+                        >
+                          {Number(potentialInventoryProfit).toLocaleString("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          Valor del negocio - costo total neto
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Stack>
                 </Paper>
               </Grow>
