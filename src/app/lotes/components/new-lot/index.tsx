@@ -12,6 +12,7 @@ import {
   OutlinedInput,
   Select,
   TextField,
+  Typography,
 } from "@mui/material";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -58,20 +59,48 @@ export const NewLotModal: FC<{
   });
 
   const initialDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const initialRow = useMemo(() => createRow(), []);
 
   const [receivedAt, setReceivedAt] = useState(initialDate);
   const [supplierId, setSupplierId] = useState("");
-  const [rows, setRows] = useState<RowState[]>([createRow()]);
+  const [rows, setRows] = useState<RowState[]>([initialRow]);
+  const [activeRowId, setActiveRowId] = useState(initialRow.rowId);
   const [errors, setErrors] = useState<{
     receivedAt?: string;
     supplierId?: string;
     rows: RowErrorState[];
   }>({ rows: [{}] });
 
+  const activeRowIndex = useMemo(() => {
+    const foundIndex = rows.findIndex((row) => row.rowId === activeRowId);
+
+    return foundIndex === -1 ? 0 : foundIndex;
+  }, [activeRowId, rows]);
+
+  const activeRow = rows[activeRowIndex] ?? null;
+
+  const hasRowContent = (row: RowState) =>
+    Boolean(row.selectedProduct?._id) ||
+    String(row.quantity ?? "").trim().length > 0 ||
+    String(row.purchasePrice ?? "").trim().length > 0;
+
+  const rowsToSubmit = useMemo(
+    () =>
+      rows.filter(
+        (row) =>
+          Boolean(row.selectedProduct?._id) ||
+          String(row.quantity ?? "").trim().length > 0 ||
+          String(row.purchasePrice ?? "").trim().length > 0,
+      ),
+    [rows],
+  );
+
   const resetForm = () => {
+    const nextInitialRow = createRow();
     setReceivedAt(initialDate);
     setSupplierId("");
-    setRows([createRow()]);
+    setRows([nextInitialRow]);
+    setActiveRowId(nextInitialRow.rowId);
     setErrors({ rows: [{}] });
   };
 
@@ -81,17 +110,17 @@ export const NewLotModal: FC<{
   };
 
   const canSubmit = useMemo(() => {
-    if (!receivedAt || !supplierId || rows.length === 0) {
+    if (!receivedAt || !supplierId || rowsToSubmit.length === 0) {
       return false;
     }
 
-    return rows.every(
+    return rowsToSubmit.every(
       (row) =>
         Boolean(row.selectedProduct?._id) &&
         Number(row.quantity) > 0 &&
         Number(row.purchasePrice) >= 0,
     );
-  }, [receivedAt, rows, supplierId]);
+  }, [receivedAt, rowsToSubmit, supplierId]);
 
   const isFormDirty = useMemo(() => {
     const hasSupplier = String(supplierId).trim().length > 0;
@@ -129,11 +158,13 @@ export const NewLotModal: FC<{
   };
 
   const handleAddProductRow = () => {
-    setRows((prev) => [...prev, createRow()]);
+    const nextRow = createRow();
+    setRows((prev) => [...prev, nextRow]);
     setErrors((prev) => ({
       ...prev,
       rows: [...prev.rows, {}],
     }));
+    setActiveRowId(nextRow.rowId);
   };
 
   const handleRemoveProductRow = (indexToRemove: number) => {
@@ -142,7 +173,17 @@ export const NewLotModal: FC<{
         return prev;
       }
 
-      return prev.filter((_, index) => index !== indexToRemove);
+      const nextRows = prev.filter((_, index) => index !== indexToRemove);
+      const removedRowId = prev[indexToRemove]?.rowId;
+
+      if (removedRowId === activeRowId) {
+        const fallbackRow = nextRows[Math.max(0, indexToRemove - 1)] ?? nextRows[0];
+        if (fallbackRow) {
+          setActiveRowId(fallbackRow.rowId);
+        }
+      }
+
+      return nextRows;
     });
 
     setErrors((prev) => {
@@ -199,6 +240,10 @@ export const NewLotModal: FC<{
       rows: rows.map((row) => {
         const rowErrors: RowErrorState = {};
 
+        if (!hasRowContent(row)) {
+          return rowErrors;
+        }
+
         if (!row.selectedProduct?._id) {
           rowErrors.selectedProduct = "El producto es requerido.";
         }
@@ -227,10 +272,20 @@ export const NewLotModal: FC<{
       nextErrors.supplierId = "El proveedor es requerido.";
     }
 
+    if (rowsToSubmit.length === 0) {
+      const firstRowError = nextErrors.rows[0] ?? {};
+      nextErrors.rows[0] = {
+        ...firstRowError,
+        selectedProduct: firstRowError.selectedProduct ?? "Agrega al menos un producto.",
+      };
+    }
+
     const hasRowErrors = nextErrors.rows.some(
       (rowError) => rowError.selectedProduct || rowError.quantity || rowError.purchasePrice,
     );
-    const hasErrors = Boolean(nextErrors.receivedAt || nextErrors.supplierId || hasRowErrors);
+    const hasErrors = Boolean(
+      nextErrors.receivedAt || nextErrors.supplierId || hasRowErrors || rowsToSubmit.length === 0,
+    );
 
     setErrors(nextErrors);
     return !hasErrors;
@@ -246,7 +301,7 @@ export const NewLotModal: FC<{
     return onSubmit({
       receivedAt,
       supplierId,
-      items: rows.map((row) => ({
+      items: rowsToSubmit.map((row) => ({
         productId: String(row.selectedProduct?._id ?? ""),
         quantity: Number(row.quantity),
         purchasePrice: Number(row.purchasePrice),
@@ -298,14 +353,18 @@ export const NewLotModal: FC<{
           <FormHelperText>{errors.supplierId ?? ""}</FormHelperText>
         </FormControl>
 
-        {rows.map((row, index) => (
-          <Box key={row.rowId} sx={{ display: "grid", gap: 1.5 }}>
-            {rows.length > 1 && <Divider />}
+        <Divider />
+
+        {activeRow && (
+          <Box sx={{ display: "grid", gap: 1.5 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              {`Editar producto ${activeRowIndex + 1}`}
+            </Typography>
 
             <Autocomplete
               options={productOptions}
-              value={row.selectedProduct}
-              onChange={(_, value) => handleChangeRow(index, "selectedProduct", value)}
+              value={activeRow.selectedProduct}
+              onChange={(_, value) => handleChangeRow(activeRowIndex, "selectedProduct", value)}
               isOptionEqualToValue={(option, value) => option._id === value._id}
               getOptionLabel={getProductOptionLabel}
               renderOption={(props, option) => {
@@ -322,10 +381,10 @@ export const NewLotModal: FC<{
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label={`Producto ${index + 1}`}
+                  label="Producto"
                   placeholder="Busca producto"
-                  error={Boolean(errors.rows[index]?.selectedProduct)}
-                  helperText={errors.rows[index]?.selectedProduct ?? ""}
+                  error={Boolean(errors.rows[activeRowIndex]?.selectedProduct)}
+                  helperText={errors.rows[activeRowIndex]?.selectedProduct ?? ""}
                 />
               )}
             />
@@ -333,44 +392,157 @@ export const NewLotModal: FC<{
             <TextField
               type="number"
               label="Cantidad"
-              value={row.quantity}
-              onChange={(event) => handleChangeRow(index, "quantity", event.target.value)}
+              value={activeRow.quantity}
+              onChange={(event) => handleChangeRow(activeRowIndex, "quantity", event.target.value)}
               inputProps={{ min: 1 }}
-              error={Boolean(errors.rows[index]?.quantity)}
-              helperText={errors.rows[index]?.quantity ?? ""}
+              error={Boolean(errors.rows[activeRowIndex]?.quantity)}
+              helperText={errors.rows[activeRowIndex]?.quantity ?? ""}
             />
 
-            <FormControl fullWidth error={Boolean(errors.rows[index]?.purchasePrice)}>
-              <InputLabel htmlFor={`purchase-price-${index}`}>Precio compra unidad</InputLabel>
+            <FormControl fullWidth error={Boolean(errors.rows[activeRowIndex]?.purchasePrice)}>
+              <InputLabel htmlFor={`purchase-price-${activeRowIndex}`}>
+                Precio compra unidad
+              </InputLabel>
               <OutlinedInput
-                id={`purchase-price-${index}`}
-                value={row.purchasePrice}
-                onChange={(event) => handleChangeRow(index, "purchasePrice", event.target.value)}
+                id={`purchase-price-${activeRowIndex}`}
+                value={activeRow.purchasePrice}
+                onChange={(event) =>
+                  handleChangeRow(activeRowIndex, "purchasePrice", event.target.value)
+                }
                 startAdornment={<InputAdornment position="start">$</InputAdornment>}
                 label="Precio compra unidad"
                 type="number"
                 inputProps={{ min: 0 }}
               />
-              <FormHelperText>{errors.rows[index]?.purchasePrice ?? ""}</FormHelperText>
+              <FormHelperText>{errors.rows[activeRowIndex]?.purchasePrice ?? ""}</FormHelperText>
             </FormControl>
 
-            {row.selectedProduct && (
+            {activeRow.selectedProduct && (
               <Box sx={{ color: "text.secondary", fontSize: 13 }}>
-                {`Stock actual de ${row.selectedProduct.name}: ${row.selectedProduct.amount}`}
+                {`Stock actual de ${activeRow.selectedProduct.name}: ${activeRow.selectedProduct.amount}`}
               </Box>
             )}
 
-            {rows.length > 1 && (
-              <Button color="error" variant="text" onClick={() => handleRemoveProductRow(index)}>
-                Quitar producto
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Button variant="outlined" onClick={handleAddProductRow}>
+                Agregar producto
               </Button>
-            )}
+              {rows.length > 1 && (
+                <Button
+                  color="error"
+                  variant="text"
+                  onClick={() => handleRemoveProductRow(activeRowIndex)}
+                >
+                  Quitar seleccionado
+                </Button>
+              )}
+            </Box>
           </Box>
-        ))}
+        )}
 
-        <Button variant="outlined" onClick={handleAddProductRow}>
-          Agregar producto
-        </Button>
+        <Box sx={{ display: "grid", gap: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            {`Productos del lote (${rows.length})`}
+          </Typography>
+
+          <Box
+            sx={{
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 1,
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "1fr 80px 110px 100px",
+                gap: 1,
+                px: 1.5,
+                py: 1,
+                bgcolor: "action.hover",
+              }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                Producto
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, textAlign: "right" }}>
+                Cant.
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, textAlign: "right" }}>
+                Costo
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, textAlign: "right" }}>
+                Acción
+              </Typography>
+            </Box>
+
+            <Box sx={{ maxHeight: 220, overflowY: "auto" }}>
+              {rows.map((row, index) => {
+                const isSelected = row.rowId === activeRowId;
+                const hasError = Boolean(
+                  errors.rows[index]?.selectedProduct ||
+                  errors.rows[index]?.quantity ||
+                  errors.rows[index]?.purchasePrice,
+                );
+
+                return (
+                  <Box
+                    key={row.rowId}
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 80px 110px 100px",
+                      gap: 1,
+                      px: 1.5,
+                      py: 1,
+                      borderTop: "1px solid",
+                      borderColor: "divider",
+                      bgcolor: isSelected ? "action.selected" : "background.paper",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => setActiveRowId(row.rowId)}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: isSelected ? 700 : 500,
+                        color: hasError ? "error.main" : "text.primary",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {row.selectedProduct
+                        ? getProductOptionLabel(row.selectedProduct)
+                        : "Sin producto"}
+                    </Typography>
+                    <Typography variant="body2" sx={{ textAlign: "right" }}>
+                      {row.quantity || "-"}
+                    </Typography>
+                    <Typography variant="body2" sx={{ textAlign: "right" }}>
+                      {row.purchasePrice
+                        ? `$${Number(row.purchasePrice).toLocaleString("es-CO")}`
+                        : "-"}
+                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleRemoveProductRow(index);
+                        }}
+                        disabled={rows.length === 1}
+                      >
+                        Quitar
+                      </Button>
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
+        </Box>
       </>
     </Modal>
   );
