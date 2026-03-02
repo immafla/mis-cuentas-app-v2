@@ -86,6 +86,7 @@ export const useSales = () => {
 
   const bufferRef = useRef("");
   const lastKeyTimeRef = useRef(0);
+  const payLockRef = useRef(false);
 
   const addProductByBarcode = useCallback(async (barCode: string) => {
     console.log({ barCode });
@@ -334,10 +335,11 @@ export const useSales = () => {
   }, []);
 
   const handlePay = useCallback(async () => {
-    if (totalItems === 0 || isPaying) {
+    if (totalItems === 0 || isPaying || payLockRef.current) {
       return;
     }
 
+    payLockRef.current = true;
     setIsPaying(true);
     try {
       const soldItems = listSelectedProducts
@@ -370,6 +372,7 @@ export const useSales = () => {
       console.error("Error al actualizar el inventario", error);
       setStockWarning("No se pudo procesar la venta. Intenta de nuevo.");
     } finally {
+      payLockRef.current = false;
       setIsPaying(false);
     }
   }, [isPaying, listSelectedProducts, router, totalItems]);

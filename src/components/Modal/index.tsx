@@ -1,4 +1,4 @@
-import React, { FC, JSX } from "react";
+import React, { FC, JSX, useRef, useState } from "react";
 import { Button, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 
 import Dialog from "@mui/material/Dialog";
@@ -11,7 +11,14 @@ export const Modal: FC<{
   onSubmit: () => void | boolean | Promise<void | boolean>;
   open: boolean;
 }> = ({ open, onClose, onAttemptClose, onSubmit, children, title }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
+
   const handleAttemptClose = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     const canClose = await onAttemptClose?.();
 
     if (canClose === false) {
@@ -22,23 +29,40 @@ export const Modal: FC<{
   };
 
   const handleSubmit = async () => {
-    const canClose = await onSubmit();
-
-    if (canClose === false) {
+    if (isSubmitting || submitLockRef.current) {
       return;
     }
 
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
+    submitLockRef.current = true;
+    setIsSubmitting(true);
 
-    onClose();
+    try {
+      const canClose = await onSubmit();
+
+      if (canClose === false) {
+        return;
+      }
+
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+
+      onClose();
+    } finally {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Dialog
       open={open}
-      onClose={() => {
+      disableEscapeKeyDown={isSubmitting}
+      onClose={(_, reason) => {
+        if (isSubmitting || reason === "backdropClick") {
+          return;
+        }
+
         void handleAttemptClose();
       }}
     >
@@ -59,14 +83,15 @@ export const Modal: FC<{
       </DialogContent>
       <DialogActions sx={{ p: "1.25rem" }}>
         <Button
+          disabled={isSubmitting}
           onClick={() => {
             void handleAttemptClose();
           }}
         >
           Cancel
         </Button>
-        <Button color="primary" onClick={handleSubmit} variant="contained">
-          Aceptar
+        <Button color="primary" disabled={isSubmitting} onClick={handleSubmit} variant="contained">
+          {isSubmitting ? "Guardando..." : "Aceptar"}
         </Button>
       </DialogActions>
     </Dialog>

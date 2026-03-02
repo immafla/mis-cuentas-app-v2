@@ -52,6 +52,8 @@ const Table = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isRowActionRunning, setIsRowActionRunning] = React.useState(false);
+  const rowActionLockRef = React.useRef(false);
   const [grouping, setGrouping] = React.useState<string[]>(
     enableGrouping && initialGrouping ? initialGrouping : [],
   );
@@ -82,6 +84,22 @@ const Table = ({
     };
   }, [isLoading, isSaving, setTableSourceLoading, tableId]);
 
+  const runWithRowActionLock = async (action: () => Promise<void>) => {
+    if (rowActionLockRef.current) {
+      return;
+    }
+
+    rowActionLockRef.current = true;
+    setIsRowActionRunning(true);
+
+    try {
+      await action();
+    } finally {
+      rowActionLockRef.current = false;
+      setIsRowActionRunning(false);
+    }
+  };
+
   const ToolbarActions = () => {
     const isCollapsed = typeof expanded !== "boolean" && Object.keys(expanded).length === 0;
 
@@ -91,6 +109,7 @@ const Table = ({
           color="primary"
           onClick={() => setCreateModalOpen(true)}
           variant="contained"
+          disabled={isRowActionRunning || isSaving || isLoadingTable}
           fullWidth={isMobile}
           sx={{ minWidth: isMobile ? "100%" : "auto" }}
         >
@@ -162,7 +181,11 @@ const Table = ({
     <Box sx={{ display: "flex", gap: isMobile ? "0.25rem" : "0.75rem" }}>
       {showEditAction && (
         <Tooltip arrow placement="left" title="Editar">
-          <IconButton size={isMobile ? "small" : "medium"} onClick={() => table.setEditingRow(row)}>
+          <IconButton
+            size={isMobile ? "small" : "medium"}
+            disabled={isRowActionRunning || isSaving || isLoadingTable}
+            onClick={() => table.setEditingRow(row)}
+          >
             <Edit fontSize={isMobile ? "small" : "medium"} />
           </IconButton>
         </Tooltip>
@@ -172,9 +195,12 @@ const Table = ({
           <IconButton
             size={isMobile ? "small" : "medium"}
             color="error"
+            disabled={isRowActionRunning || isSaving || isLoadingTable}
             onClick={() => {
-              void runWithTableLoading(async () => {
-                await Promise.resolve(handleDeleteRow(row));
+              void runWithRowActionLock(async () => {
+                await runWithTableLoading(async () => {
+                  await Promise.resolve(handleDeleteRow(row));
+                });
               });
             }}
           >
@@ -334,13 +360,15 @@ const Table = ({
     enableEditing: showEditAction,
     onEditingRowSave: showEditAction
       ? async (props) => {
-          await runWithTableLoading(async () => {
-            setIsSaving(true);
-            try {
-              await Promise.resolve(handleSaveRowEdits(props));
-            } finally {
-              setIsSaving(false);
-            }
+          await runWithRowActionLock(async () => {
+            await runWithTableLoading(async () => {
+              setIsSaving(true);
+              try {
+                await Promise.resolve(handleSaveRowEdits(props));
+              } finally {
+                setIsSaving(false);
+              }
+            });
           });
         }
       : undefined,
