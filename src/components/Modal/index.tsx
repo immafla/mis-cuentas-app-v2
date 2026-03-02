@@ -1,5 +1,6 @@
 import React, { FC, JSX, useRef, useState } from "react";
 import { Button, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
+import type { DialogProps } from "@mui/material/Dialog";
 
 import Dialog from "@mui/material/Dialog";
 
@@ -10,7 +11,18 @@ export const Modal: FC<{
   onAttemptClose?: () => boolean | Promise<boolean>;
   onSubmit: () => void | boolean | Promise<void | boolean>;
   open: boolean;
-}> = ({ open, onClose, onAttemptClose, onSubmit, children, title }) => {
+  fullWidth?: boolean;
+  maxWidth?: DialogProps["maxWidth"];
+}> = ({
+  open,
+  onClose,
+  onAttemptClose,
+  onSubmit,
+  children,
+  title,
+  fullWidth = false,
+  maxWidth = "sm",
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitLockRef = useRef(false);
 
@@ -57,6 +69,8 @@ export const Modal: FC<{
   return (
     <Dialog
       open={open}
+      fullWidth={fullWidth}
+      maxWidth={maxWidth}
       disableEscapeKeyDown={isSubmitting}
       onClose={(_, reason) => {
         if (isSubmitting || reason === "backdropClick") {

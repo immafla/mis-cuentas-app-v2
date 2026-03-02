@@ -79,6 +79,17 @@ export const NewLotModal: FC<{
 
   const activeRow = rows[activeRowIndex] ?? null;
 
+  const selectableProductOptions = useMemo(() => {
+    const selectedIdsInOtherRows = new Set(
+      rows
+        .filter((_, index) => index !== activeRowIndex)
+        .map((row) => String(row.selectedProduct?._id ?? ""))
+        .filter(Boolean),
+    );
+
+    return productOptions.filter((option) => !selectedIdsInOtherRows.has(String(option._id)));
+  }, [activeRowIndex, productOptions, rows]);
+
   const hasRowContent = (row: RowState) =>
     Boolean(row.selectedProduct?._id) ||
     String(row.quantity ?? "").trim().length > 0 ||
@@ -203,6 +214,31 @@ export const NewLotModal: FC<{
     key: "selectedProduct" | "quantity" | "purchasePrice",
     value: ProductOption | string | null,
   ) => {
+    if (key === "selectedProduct" && value && typeof value === "object") {
+      const selectedProductId = String(value._id ?? "");
+      const isDuplicated = rows.some(
+        (row, index) => index !== indexToUpdate && String(row.selectedProduct?._id ?? "") === selectedProductId,
+      );
+
+      if (isDuplicated) {
+        setErrors((prev) => ({
+          ...prev,
+          rows: prev.rows.map((rowError, index) => {
+            if (index !== indexToUpdate) {
+              return rowError;
+            }
+
+            return {
+              ...rowError,
+              selectedProduct: "Este producto ya fue agregado al lote.",
+            };
+          }),
+        }));
+
+        return;
+      }
+    }
+
     setRows((prev) =>
       prev.map((row, index) => {
         if (index !== indexToUpdate) {
@@ -246,6 +282,19 @@ export const NewLotModal: FC<{
 
         if (!row.selectedProduct?._id) {
           rowErrors.selectedProduct = "El producto es requerido.";
+        }
+
+        const selectedProductId = String(row.selectedProduct?._id ?? "");
+        if (selectedProductId) {
+          const duplicatedCount = rows.reduce((count, candidateRow) => {
+            return String(candidateRow.selectedProduct?._id ?? "") === selectedProductId
+              ? count + 1
+              : count;
+          }, 0);
+
+          if (duplicatedCount > 1) {
+            rowErrors.selectedProduct = "Este producto ya fue agregado al lote.";
+          }
         }
 
         if (!String(row.quantity).trim()) {
@@ -316,129 +365,135 @@ export const NewLotModal: FC<{
       onAttemptClose={handleAttemptClose}
       onSubmit={handleSubmit}
       title="Registrar lote"
+      fullWidth
+      maxWidth="lg"
     >
-      <>
-        <TextField
-          type="date"
-          label="Fecha de ingreso"
-          value={receivedAt}
-          onChange={(event) => {
-            setReceivedAt(event.target.value);
-            setErrors((prev) => ({ ...prev, receivedAt: undefined }));
-          }}
-          error={Boolean(errors.receivedAt)}
-          helperText={errors.receivedAt ?? ""}
-          InputLabelProps={{ shrink: true }}
-        />
-
-        <FormControl fullWidth error={Boolean(errors.supplierId)}>
-          <InputLabel id="supplier-label">Proveedor</InputLabel>
-          <Select
-            labelId="supplier-label"
-            value={supplierId}
-            label="Proveedor"
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "0.9fr 1.1fr", lg: "0.85fr 1.15fr" },
+          gap: 2,
+          alignItems: "start",
+        }}
+      >
+        <Box sx={{ display: "grid", gap: 1.5 }}>
+          <TextField
+            type="date"
+            label="Fecha de ingreso"
+            fullWidth
+            value={receivedAt}
             onChange={(event) => {
-              setSupplierId(String(event.target.value));
-              setErrors((prev) => ({ ...prev, supplierId: undefined }));
+              setReceivedAt(event.target.value);
+              setErrors((prev) => ({ ...prev, receivedAt: undefined }));
             }}
-          >
-            {[...suppliers]
-              .sort((a, b) => String(a.name ?? "").localeCompare(String(b.name ?? ""), "es"))
-              .map((supplier) => (
-                <MenuItem key={supplier._id} value={supplier._id}>
-                  {`${supplier.name} · ${supplier.nit}`}
-                </MenuItem>
-              ))}
-          </Select>
-          <FormHelperText>{errors.supplierId ?? ""}</FormHelperText>
-        </FormControl>
+            error={Boolean(errors.receivedAt)}
+            helperText={errors.receivedAt ?? ""}
+            InputLabelProps={{ shrink: true }}
+          />
 
-        <Divider />
-
-        {activeRow && (
-          <Box sx={{ display: "grid", gap: 1.5 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              {`Editar producto ${activeRowIndex + 1}`}
-            </Typography>
-
-            <Autocomplete
-              options={productOptions}
-              value={activeRow.selectedProduct}
-              onChange={(_, value) => handleChangeRow(activeRowIndex, "selectedProduct", value)}
-              isOptionEqualToValue={(option, value) => option._id === value._id}
-              getOptionLabel={getProductOptionLabel}
-              renderOption={(props, option) => {
-                return (
-                  <Box
-                    component="li"
-                    {...props}
-                    key={`${option._id}-${option.bar_code}-lot-option`}
-                  >
-                    {getProductOptionLabel(option)}
-                  </Box>
-                );
+          <FormControl fullWidth error={Boolean(errors.supplierId)}>
+            <InputLabel id="supplier-label">Proveedor</InputLabel>
+            <Select
+              labelId="supplier-label"
+              value={supplierId}
+              label="Proveedor"
+              onChange={(event) => {
+                setSupplierId(String(event.target.value));
+                setErrors((prev) => ({ ...prev, supplierId: undefined }));
               }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Producto"
-                  placeholder="Busca producto"
-                  error={Boolean(errors.rows[activeRowIndex]?.selectedProduct)}
-                  helperText={errors.rows[activeRowIndex]?.selectedProduct ?? ""}
-                />
-              )}
-            />
+            >
+              {[...suppliers]
+                .sort((a, b) => String(a.name ?? "").localeCompare(String(b.name ?? ""), "es"))
+                .map((supplier) => (
+                  <MenuItem key={supplier._id} value={supplier._id}>
+                    {`${supplier.name} · ${supplier.nit}`}
+                  </MenuItem>
+                ))}
+            </Select>
+            <FormHelperText>{errors.supplierId ?? ""}</FormHelperText>
+          </FormControl>
 
-            <TextField
-              type="number"
-              label="Cantidad"
-              value={activeRow.quantity}
-              onChange={(event) => handleChangeRow(activeRowIndex, "quantity", event.target.value)}
-              inputProps={{ min: 1 }}
-              error={Boolean(errors.rows[activeRowIndex]?.quantity)}
-              helperText={errors.rows[activeRowIndex]?.quantity ?? ""}
-            />
+          <Divider />
 
-            <FormControl fullWidth error={Boolean(errors.rows[activeRowIndex]?.purchasePrice)}>
-              <InputLabel htmlFor={`purchase-price-${activeRowIndex}`}>
-                Precio compra unidad
-              </InputLabel>
-              <OutlinedInput
-                id={`purchase-price-${activeRowIndex}`}
-                value={activeRow.purchasePrice}
-                onChange={(event) =>
-                  handleChangeRow(activeRowIndex, "purchasePrice", event.target.value)
-                }
-                startAdornment={<InputAdornment position="start">$</InputAdornment>}
-                label="Precio compra unidad"
-                type="number"
-                inputProps={{ min: 0 }}
+          {activeRow && (
+            <Box sx={{ display: "grid", gap: 1.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                {`Editar producto ${activeRowIndex + 1}`}
+              </Typography>
+
+              <Autocomplete
+                options={selectableProductOptions}
+                value={activeRow.selectedProduct}
+                onChange={(_, value) => handleChangeRow(activeRowIndex, "selectedProduct", value)}
+                isOptionEqualToValue={(option, value) => option._id === value._id}
+                getOptionLabel={getProductOptionLabel}
+                renderOption={(props, option) => {
+                  return (
+                    <Box
+                      component="li"
+                      {...props}
+                      key={`${option._id}-${option.bar_code}-lot-option`}
+                    >
+                      {getProductOptionLabel(option)}
+                    </Box>
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Producto"
+                    placeholder="Busca producto"
+                    error={Boolean(errors.rows[activeRowIndex]?.selectedProduct)}
+                    helperText={errors.rows[activeRowIndex]?.selectedProduct ?? ""}
+                  />
+                )}
               />
-              <FormHelperText>{errors.rows[activeRowIndex]?.purchasePrice ?? ""}</FormHelperText>
-            </FormControl>
 
-            {activeRow.selectedProduct && (
-              <Box sx={{ color: "text.secondary", fontSize: 13 }}>
-                {`Stock actual de ${activeRow.selectedProduct.name}: ${activeRow.selectedProduct.amount}`}
-              </Box>
-            )}
+              <TextField
+                type="number"
+                label="Cantidad"
+                fullWidth
+                value={activeRow.quantity}
+                onChange={(event) =>
+                  handleChangeRow(activeRowIndex, "quantity", event.target.value)
+                }
+                inputProps={{ min: 1 }}
+                error={Boolean(errors.rows[activeRowIndex]?.quantity)}
+                helperText={errors.rows[activeRowIndex]?.quantity ?? ""}
+              />
 
-            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              <Button variant="outlined" onClick={handleAddProductRow}>
-                Agregar producto
-              </Button>
-              {rows.length > 1 && (
-                <Button
-                  color="error"
-                  variant="text"
-                  onClick={() => handleRemoveProductRow(activeRowIndex)}
-                >
-                  Quitar seleccionado
-                </Button>
+              <FormControl fullWidth error={Boolean(errors.rows[activeRowIndex]?.purchasePrice)}>
+                <InputLabel htmlFor={`purchase-price-${activeRowIndex}`}>
+                  Precio compra unidad
+                </InputLabel>
+                <OutlinedInput
+                  id={`purchase-price-${activeRowIndex}`}
+                  value={activeRow.purchasePrice}
+                  onChange={(event) =>
+                    handleChangeRow(activeRowIndex, "purchasePrice", event.target.value)
+                  }
+                  startAdornment={<InputAdornment position="start">$</InputAdornment>}
+                  label="Precio compra unidad"
+                  type="number"
+                  inputProps={{ min: 0 }}
+                />
+                <FormHelperText>{errors.rows[activeRowIndex]?.purchasePrice ?? ""}</FormHelperText>
+              </FormControl>
+
+              {activeRow.selectedProduct && (
+                <Box sx={{ color: "text.secondary", fontSize: 13 }}>
+                  {`Stock actual de ${activeRow.selectedProduct.name}: ${activeRow.selectedProduct.amount}`}
+                </Box>
               )}
+
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                <Button variant="outlined" onClick={handleAddProductRow}>
+                  Agregar producto
+                </Button>
+              </Box>
             </Box>
-          </Box>
-        )}
+          )}
+        </Box>
 
         <Box sx={{ display: "grid", gap: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
@@ -477,7 +532,7 @@ export const NewLotModal: FC<{
               </Typography>
             </Box>
 
-            <Box sx={{ maxHeight: 220, overflowY: "auto" }}>
+            <Box sx={{ maxHeight: 420, overflowY: "auto" }}>
               {rows.map((row, index) => {
                 const isSelected = row.rowId === activeRowId;
                 const hasError = Boolean(
@@ -528,6 +583,8 @@ export const NewLotModal: FC<{
                       <Button
                         size="small"
                         color="error"
+                        variant="contained"
+                        sx={{ fontWeight: 700, minWidth: 78 }}
                         onClick={(event) => {
                           event.stopPropagation();
                           handleRemoveProductRow(index);
@@ -543,7 +600,7 @@ export const NewLotModal: FC<{
             </Box>
           </Box>
         </Box>
-      </>
+      </Box>
     </Modal>
   );
 };
