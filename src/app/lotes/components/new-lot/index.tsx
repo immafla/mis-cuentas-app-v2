@@ -217,7 +217,8 @@ export const NewLotModal: FC<{
     if (key === "selectedProduct" && value && typeof value === "object") {
       const selectedProductId = String(value._id ?? "");
       const isDuplicated = rows.some(
-        (row, index) => index !== indexToUpdate && String(row.selectedProduct?._id ?? "") === selectedProductId,
+        (row, index) =>
+          index !== indexToUpdate && String(row.selectedProduct?._id ?? "") === selectedProductId,
       );
 
       if (isDuplicated) {
