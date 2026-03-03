@@ -1,6 +1,8 @@
 "use server";
 
 import connectDB from "@/lib/mongodb";
+import "@/lib/models/Brand";
+import "@/lib/models/Category";
 import Lot from "@/lib/models/Lot";
 import Product from "@/lib/models/Product";
 import Sale from "@/lib/models/Sale";
@@ -36,6 +38,7 @@ type DashboardSale = {
 };
 
 type SaleItemSummary = {
+  productId?: string;
   name: string;
   quantity: number;
 };
@@ -718,6 +721,52 @@ export async function getSalesHistory(limit = 200) {
 
     const sales = await Sale.find({}).sort({ soldAt: -1 }).limit(limit).lean();
 
+    const productIds = Array.from(
+      new Set(
+        sales.flatMap((sale) =>
+          Array.isArray(sale.items)
+            ? (sale.items as SaleItemSummary[])
+                .map((item) => String(item.productId ?? "").trim())
+                .filter((productId) => productId.length > 0)
+            : [],
+        ),
+      ),
+    );
+
+    const validProductObjectIds = productIds.filter((productId) =>
+      Types.ObjectId.isValid(productId),
+    );
+
+    const products =
+      validProductObjectIds.length > 0
+        ? await Product.find({ _id: { $in: validProductObjectIds } })
+            .select("brand category")
+            .populate("brand", "name")
+            .populate("category", "name")
+            .lean<
+              Array<{
+                _id: unknown;
+                brand?: { name?: string } | null;
+                category?: { name?: string } | null;
+              }>
+            >()
+        : [];
+
+    const productMetaById = new Map(
+      products.map((product) => {
+        const categoryName = String(product.category?.name ?? "").trim();
+        const brandName = String(product.brand?.name ?? "").trim();
+
+        return [
+          String(product._id),
+          {
+            categoryName,
+            brandName,
+          },
+        ] as const;
+      }),
+    );
+
     const rows: SaleHistoryRow[] = sales.map((sale) => ({
       _id: String(sale._id),
       soldAt: new Date(sale.soldAt).toISOString(),
@@ -726,7 +775,17 @@ export async function getSalesHistory(limit = 200) {
       totalItems: Number(sale.totalItems ?? 0),
       products: Array.isArray(sale.items)
         ? (sale.items as SaleItemSummary[])
-            .map((item) => `${item.name} x${item.quantity}`)
+            .map((item) => {
+              const productMeta = productMetaById.get(String(item.productId ?? ""));
+              const categoryName = String(productMeta?.categoryName ?? "").trim();
+              const brandName = String(productMeta?.brandName ?? "").trim();
+
+              const detailParts = [categoryName, brandName].filter((part) => part.length > 0);
+              const productDescription =
+                detailParts.length > 0 ? `${item.name} (${detailParts.join(" - ")})` : item.name;
+
+              return `${productDescription} x${item.quantity}`;
+            })
             .join(" · ")
         : "",
     }));
